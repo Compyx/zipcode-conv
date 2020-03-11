@@ -1,0 +1,9 @@
+# temp files
+*.swp
+*~
+
+# object files
+*.o
+*.a
+*.so
+*.la
