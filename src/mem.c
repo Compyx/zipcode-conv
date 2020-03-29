@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 #include "mem.h"
 
@@ -99,3 +102,55 @@ char *zcc_strdup(const char *s)
     memcpy(t, s, len + 1);
     return t;
 }
+
+
+/** \brief  Create a hexdump of \a len bytes of \a src on stdout
+ *
+ * \param[in]   src     data to display
+ * \param[in]   len     number of bytes to display
+ * \param[in]   voffset virtual offset (displayed as the 'address')
+ */
+void zcc_hexdump(const uint8_t *src, size_t len, size_t voffset)
+{
+    uint8_t display[16];
+    size_t i = 0;
+
+    if (src == NULL || len == 0) {
+        fprintf(stderr, "%s:%s:%d: error: no input\n",
+                __FILE__, __func__, __LINE__);
+        return;
+    }
+
+    while (i < len) {
+        size_t x;
+        size_t t;
+        size_t c;
+
+        printf("%05lx  ", (unsigned long)voffset);
+        fflush(stdout);
+        for (x = 0; x < 16 && i + x < len; x++) {
+            display[x] = src[i + x];
+            printf("%02x ", src[i + x]);
+        }
+        c = x;
+        t = x;
+        while (t++ < 16) {
+            printf("   ");
+        }
+        for (t = 0; t < c; t++) {
+            putchar(isprint(display[t]) ? display[t] : '.');
+        }
+
+
+        if (i + x >= len) {
+            putchar('\n');
+            return;
+        }
+        putchar('\n');
+        i += 16;
+        voffset += 16;
+    }
+}
+
+
+

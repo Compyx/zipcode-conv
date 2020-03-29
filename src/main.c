@@ -29,6 +29,7 @@
 
 
 #include "d64.h"
+#include "mem.h"
 
 
 /** \brief  Test image for src/d64.c
@@ -52,6 +53,8 @@ int main(void)
     if (zcc_d64_read(&d64, D64_TEST_IMAGE, 0)) {
         printf("OK, %ld bytes\n", (unsigned long)d64.size);
         zcc_d64_dump_info(&d64);
+        zcc_d64_dump_bam(&d64);
+
         zcc_d64_free(&d64);
     } else {
         printf("Failed.\n");

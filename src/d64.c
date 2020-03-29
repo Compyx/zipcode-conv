@@ -281,3 +281,12 @@ void zcc_d64_dump_info(const zcc_d64_t *d64)
     printf("size: $%lx\n", (unsigned long)d64->size);
 }
 
+
+/** \brief  Show a hexdump of the BAM of \a d64
+ *
+ * \param[in]   d64 D64 handle
+ */
+void zcc_d64_dump_bam(const zcc_d64_t *d64)
+{
+    zcc_hexdump(d64->data + 0x16500, 256, 0x16500);
+}

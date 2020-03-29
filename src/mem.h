@@ -34,5 +34,6 @@ void *zcc_malloc(size_t n);
 void *zcc_realloc(void *p, size_t n);
 void zcc_free(void *p);
 char *zcc_strdup(const char *s);
+void zcc_hexdump(const uint8_t *src, size_t len, size_t voffset);
 
 #endif

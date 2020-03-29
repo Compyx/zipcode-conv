@@ -114,6 +114,7 @@ void zcc_d64_init(zcc_d64_t *d64);
 void zcc_d64_free(zcc_d64_t *d64);
 bool zcc_d64_read(zcc_d64_t *d64, const char *path, zcc_d64_type_t type);
 void zcc_d64_dump_info(const zcc_d64_t *d64);
+void zcc_d64_dump_bam(const zcc_d64_t *d64);
 
 bool zcc_d64_block_read(const zcc_d64_t *d64,
                         uint8_t *buffer,
