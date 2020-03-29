@@ -42,7 +42,8 @@ int zcc_errno;
 static const char *err_msgs[] = {
     "OK",
     "I/O error",
-    "BLA"
+    "track number out of range",
+    "sector number out of range"
 };
 
 

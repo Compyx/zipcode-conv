@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "errors.h"
 #include "mem.h"
 #include "io.h"
 
@@ -46,6 +47,162 @@ static const char *dos_types[] = {
     "Professional DOS",
     "Prologic DOS"
 };
+
+
+/** \brief  Speed zones table for D64 images
+ */
+static const zcc_d64_speedzone_t speedzones[] = {
+    {  1, 17, 21 },
+    { 18, 24, 19 },
+    { 25, 30, 18 },
+    { 31, 40, 17 }
+};
+
+
+
+
+/** \brief  Get offset in bytes for block at (\a track, \a sector)
+ *
+ * \param[in]   track   track number
+ * \param[in]   sector  sector number
+ *
+ * \return  offset in bytes or -1 on failure
+ * \throw   ZCC_ERR_TRACK_RANGE
+ * \throw   ZCC_ERR_SECTOR_RANGE
+ */
+long zcc_d64_block_offset(int track, int sector)
+{
+    int zone = 0;
+    long offset = 0;
+    int tracks;
+
+    /* preliminary checks on track and sector number */
+    if (track < ZCC_D64_TRACK_MIN || track > ZCC_D64_TRACK_MAX_EXT) {
+        zcc_errno = ZCC_ERR_TRACK_RANGE;
+        return -1;
+    }
+    if (sector < ZCC_D64_SECTOR_MIN || sector > ZCC_D64_SECTOR_MAX) {
+        zcc_errno = ZCC_ERR_SECTOR_RANGE;
+        return -1;
+    }
+
+    while (zone < (int)(sizeof speedzones / sizeof speedzones[0])
+            && (track > speedzones[zone].track_max)) {
+        /* add complete zone */
+        tracks = speedzones[zone].track_max - speedzones[zone].track_min + 1;
+        offset += tracks * ZCC_D64_BLOCK_SIZE_RAW * speedzones[zone].sectors;
+        zone++;
+    }
+
+    /* final sector number check */
+    if (sector >= speedzones[zone].sectors) {
+        return -1;
+    }
+
+    tracks = track - speedzones[zone].track_min;
+    offset += tracks * ZCC_D64_BLOCK_SIZE_RAW * speedzones[zone].sectors;
+    return offset + sector * ZCC_D64_BLOCK_SIZE_RAW;
+}
+
+
+/** \brief  Get offset in bytes for \a track
+ *
+ * \param[in]   track   track number
+ *
+ * \return  offset in bytes or -1 on failure
+ * \throw   ZCC_ERR_TRACK_RANGE
+ */
+long zcc_d64_track_offset(int track)
+{
+    return zcc_d64_block_offset(track, 0);
+}
+
+
+/** \brief  Check if \a track number is valid for \a d64
+ *
+ * \param[in]   d64     D64 handle
+ * \param[in]   track   track number
+ *
+ * \return  true if \a track is valid for image \a d64
+ * \throw   ZCC_ERR_TRACK_RANGE
+ */
+bool zcc_d64_track_is_valid(const zcc_d64_t *d64, int track)
+{
+    /* check track number if 35-track image */
+    if (d64->type == ZCC_D64_TYPE_CBMDOS) {
+        if (track < ZCC_D64_TRACK_MIN || track > ZCC_D64_TRACK_MAX) {
+            zcc_errno = ZCC_ERR_TRACK_RANGE;
+            return false;
+        }
+    }
+    if (track < ZCC_D64_TRACK_MIN || track > ZCC_D64_TRACK_MAX_EXT) {
+        zcc_errno = ZCC_ERR_TRACK_RANGE;
+        return false;
+    }
+    return true;
+}
+
+
+/** \brief  Read block (\a track,\a sector) in \a d64 into \a buffer
+ *
+ * \param[in]   d64     D64 handle
+ * \param[out]  buffer  buffer to store block data
+ * \param[in]   track   track number of block
+ * \param[in]   sector  sector number of sector
+ *
+ * \return  true on success
+ * \throw   ZCC_ERR_TRACK_RANGE
+ * \throw   ZCC_ERR_SECTOR_RANGE
+ */
+bool zcc_d64_block_read(const zcc_d64_t *d64,
+                        uint8_t *buffer,
+                        int track, int sector)
+{
+    long offset;
+
+    if (!zcc_d64_track_is_valid(d64, track)) {
+        return false;
+    }
+
+    offset = zcc_d64_block_offset(track, sector);
+    if (offset < 0) {
+        return false;
+    }
+
+    memcpy(buffer, d64->data + offset, ZCC_D64_BLOCK_SIZE_RAW);
+    return true;
+}
+
+
+/** \brief  Write \a buffer into \a d64 at block (\a track,\a sector)
+ *
+ * \param[in]   d64     D64 handle
+ * \param[out]  buffer  buffer to read data from
+ * \param[in]   track   track number of block
+ * \param[in]   sector  sector number of sector
+ *
+ * \return  true on success
+ * \throw   ZCC_ERR_TRACK_RANGE
+ * \throw   ZCC_ERR_SECTOR_RANGE
+ */
+bool zcc_d64_block_write(zcc_d64_t *d64,
+                         const uint8_t *buffer,
+                         int track, int sector)
+{
+    long offset;
+
+    if (!zcc_d64_track_is_valid(d64, track)) {
+        return false;
+    }
+
+    offset = zcc_d64_block_offset(track, sector);
+    if (offset < 0) {
+        return false;
+    }
+
+    memcpy(d64->data + offset, buffer, ZCC_D64_BLOCK_SIZE_RAW);
+    return true;
+}
 
 
 
@@ -123,5 +280,4 @@ void zcc_d64_dump_info(const zcc_d64_t *d64)
     printf("path: %s\n", d64->path != NULL ? d64->path : "<unset>");
     printf("size: $%lx\n", (unsigned long)d64->size);
 }
-
 

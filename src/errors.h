@@ -30,8 +30,10 @@
 /** \brief  Error codes
  */
 enum zcc_errno_e {
-    ZCC_ERR_OK = 0,     /**< OK */
-    ZCC_ERR_IO          /**< libc I/O error */
+    ZCC_ERR_OK = 0,         /**< OK */
+    ZCC_ERR_IO,             /**< libc I/O error */
+    ZCC_ERR_TRACK_RANGE,    /**< track number out of range */
+    ZCC_ERR_SECTOR_RANGE,   /**< sector number out of range */
 };
 
 extern int zcc_errno;
