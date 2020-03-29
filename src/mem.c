@@ -27,13 +27,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "mem.h"
 
 
 /** \brief  Allocate \a n bytes on the heap
  *
- * \param[in    n   number of bytes to allocate
+ * \param[in]   n   number of bytes to allocate
  *
  * \return  pointer to allocated memory
  *
@@ -52,6 +53,14 @@ void *zcc_malloc(size_t n)
 }
 
 
+/** \brief  Rellocate memory at \a p to \n bytes
+ *
+ * \param[in,out]   p   memory to reallocate
+ * \param[in]       n   new size
+ *
+ * \return  pointer to reallocated memory
+ * \note    the pointer returned can differ from the pointer passed
+ */
 void *zcc_realloc(void *p, size_t n)
 {
     void *tmp = realloc(p, n);
@@ -71,4 +80,22 @@ void *zcc_realloc(void *p, size_t n)
 void zcc_free(void *p)
 {
     free(p);
+}
+
+
+/** \brief  Create heap-allocated copy of string \a s
+ *
+ * \param[in]   s   nul-terminated string
+ *
+ * \return  heap-allocated copy of \a s
+ */
+char *zcc_strdup(const char *s)
+{
+    size_t len;
+    char *t;
+
+    len = strlen(s);
+    t = zcc_malloc(len + 1);
+    memcpy(t, s, len + 1);
+    return t;
 }

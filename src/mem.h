@@ -33,5 +33,6 @@
 void *zcc_malloc(size_t n);
 void *zcc_realloc(void *p, size_t n);
 void zcc_free(void *p);
+char *zcc_strdup(const char *s);
 
 #endif

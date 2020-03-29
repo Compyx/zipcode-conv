@@ -13,11 +13,11 @@ CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wredundant-decls -Wnested-externs -Wunreachable-code \
 	-g -O3
 
-OBJS = main.o errors.o mem.o io.o
+OBJS = main.o errors.o mem.o io.o d64.o
 HEADERS =
 
 TARGET = zipcode-conv
-DOCS = doc
+DOCS = doc/doxygen
 
 
 all: $(TARGET)

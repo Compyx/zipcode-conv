@@ -27,10 +27,11 @@
 #ifndef ZCC_ERRORS_H
 #define ZCC_ERRORS_H
 
-
-enum {
-    ZCC_ERR_OK = 0,
-    ZCC_ERR_IO
+/** \brief  Error codes
+ */
+enum zcc_errno_e {
+    ZCC_ERR_OK = 0,     /**< OK */
+    ZCC_ERR_IO          /**< libc I/O error */
 };
 
 extern int zcc_errno;

@@ -37,7 +37,8 @@
 int zcc_errno;
 
 
-
+/** \brief  Error messages
+ */
 static const char *err_msgs[] = {
     "OK",
     "I/O error",
@@ -45,7 +46,12 @@ static const char *err_msgs[] = {
 };
 
 
-
+/** \brief  Get error message for error number \a code
+ *
+ * \param[in]   code    error code
+ *
+ * \return  error message
+ */
 const char *zcc_strerror(int code)
 {
     if (code >= 0 || code < (int)(sizeof err_msgs / sizeof err_msgs[0])) {
@@ -56,6 +62,10 @@ const char *zcc_strerror(int code)
 }
 
 
+/** \brief  Print error code and message on stderr
+ *
+ * \param[in]   prefix  optional prefix
+ */
 void zcc_perror(const char *prefix)
 {
     if (prefix != NULL && *prefix != '\0') {

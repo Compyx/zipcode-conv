@@ -28,12 +28,34 @@
 #include <stdlib.h>
 
 
+#include "d64.h"
+
+
+/** \brief  Test image for src/d64.c
+ */
+#define D64_TEST_IMAGE  "data/d64/gumbo_dec2019.d64"
+
+
 /** \brief  Command line handler of tool
  *
  * \return  EXIT_SUCCESS or EXIT_FAILURE
  */
 int main(void)
 {
+
+    zcc_d64_t d64;
+
     printf("Hello World!\n");
+
+    printf("Reading D64 '%s' ... ", D64_TEST_IMAGE);
+    zcc_d64_init(&d64);
+    if (zcc_d64_read(&d64, D64_TEST_IMAGE, 0)) {
+        printf("OK, %ld bytes\n", (unsigned long)d64.size);
+        zcc_d64_dump_info(&d64);
+        zcc_d64_free(&d64);
+    } else {
+        printf("Failed.\n");
+    }
+
     return EXIT_SUCCESS;
 }

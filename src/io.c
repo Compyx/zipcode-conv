@@ -37,6 +37,8 @@
 #include "io.h"
 
 
+/** \brief  Block size for zcc_fread_alloc()
+ */
 #define FRA_BLOCK_SIZE  65536
 
 
@@ -117,6 +119,15 @@ long zcc_fread_alloc(uint8_t **dest, const char *path)
 }
 
 
+/** \brief  Write \a size bytes of \a data to \a path
+ *
+ * \param[in]   path    file to write \a data to
+ * \param[in]   data    data to write to \a path
+ * \param[in]   size    number of bytes of \a data to write to \a path
+ *
+ * \return  TRUE on success, FALSE on failure
+ * \throw   ZCC_ERR_IO
+ */
 bool zcc_fwrite(const char *path, const uint8_t *data, size_t size)
 {
     FILE *fp;
