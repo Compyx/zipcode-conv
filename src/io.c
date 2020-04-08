@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -36,6 +37,12 @@
 
 #include "io.h"
 
+
+#ifndef __WIN32
+# define ZCC_PATH_SEP   '/'
+#else
+# define ZCC_PATH_SEP   '\\'
+#endif
 
 /** \brief  Block size for zcc_fread_alloc()
  */
@@ -150,3 +157,16 @@ bool zcc_fwrite(const char *path, const uint8_t *data, size_t size)
     fclose(fp);
     return true;
 }
+
+
+char *zcc_basename(char *path)
+{
+    size_t len = strlen(path);
+    char *p = path + len - 1;
+
+    while (p >= path && *p != ZCC_PATH_SEP) {
+        p--;
+    }
+    return *p == ZCC_PATH_SEP ? p + 1 : path;
+}
+

@@ -43,7 +43,8 @@ static const char *err_msgs[] = {
     "OK",
     "I/O error",
     "track number out of range",
-    "sector number out of range"
+    "sector number out of range",
+    "invalid filename"
 };
 
 

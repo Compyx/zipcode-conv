@@ -34,4 +34,6 @@
 long zcc_fread_alloc(uint8_t **dest, const char *path);
 bool zcc_fwrite(const char *path, const uint8_t *data, size_t size);
 
+char *zcc_basename(char *path);
+
 #endif

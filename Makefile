@@ -11,9 +11,9 @@ CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes \
 	-Wswitch-default -Wswitch-enum -Wuninitialized -Wconversion \
 	-Wredundant-decls -Wnested-externs -Wunreachable-code \
-	-g -O3
+	-g -O3 -Wformat
 
-OBJS = main.o errors.o mem.o io.o d64.o
+OBJS = main.o errors.o mem.o io.o d64.o zipdisk.o
 HEADERS =
 
 TARGET = zipcode-conv
