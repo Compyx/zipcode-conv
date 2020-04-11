@@ -35,9 +35,10 @@ enum zcc_errno_e {
     ZCC_ERR_TRACK_RANGE,        /**< track number out of range */
     ZCC_ERR_SECTOR_RANGE,       /**< sector number out of range */
     ZCC_ERR_INVALID_FILENAME,   /**< invalid filename */
-    ZCC_ERR_RLE                 /**< RLE error (probably need to split this
-                                     into multiple errors)
-                                 */
+    ZCC_ERR_RLE,                /**< RLE error (probably need to split this
+                                     into multiple errors) */
+    ZCC_ERR_ZC_INVALID_DATA,        /**< invalid zipcode data */
+    ZCC_ERR_ZC_INVALID_PACK_METHOD  /**< invalid zipcode pack method (%11) */
 };
 
 extern int zcc_errno;

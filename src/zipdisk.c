@@ -202,7 +202,7 @@ static bool zcc_unpack_block(uint8_t *dest, uint8_t *src)
 {
     int track = src[ZCC_ZIPDISK_TRACK] & 0x3f;
     int sector = src[ZCC_ZIPDISK_SECTOR];
-    int method = src[ZCC_ZIPDISK_TRACK] >> 6;
+    int method = src[ZCC_ZIPDISK_TRACK] >> 6U;
 
     printf("track %d, sector %d, pack method %d (%s)\n",
             track, sector, method, zipdisk_pack_methods[method]);
@@ -211,10 +211,20 @@ static bool zcc_unpack_block(uint8_t *dest, uint8_t *src)
         case ZCC_PACK_NONE:
             memcpy(dest, src + ZCC_ZIPDISK_DATA, 256);
             break;
+        case ZCC_PACK_FILL:
+            memset(dest, src[ZCC_ZIPDISK_DATA], 256);
+            break;
+        case ZCC_PACK_RLE:
+            if (zcc_rle_decode(dest,
+                               src + ZCC_ZIPDISK_RLE_DATA,
+                               src[ZCC_ZIPDISK_RLE_PACKBYTE],
+                               src[ZCC_ZIPDISK_RLE_LENGTH]) != 256) {
+                return false;
+            }
+            break;
         default:
             return false;
     }
-
     return true;
 }
 
@@ -234,7 +244,7 @@ static bool iter_current_block_info(zcc_zipdisk_iter_t *iter)
     slice = iter->zip->slices[iter->slice_index];
 
     if (iter->slice_offset >= slice.size) {
-        /* end of slice */
+        /* end of slice, not an error per se. */
         return false;
     }
 
@@ -259,6 +269,14 @@ void zcc_zipdisk_iter_dump(const zcc_zipdisk_iter_t *iter)
             zipdisk_pack_methods[iter->method]);
 }
 
+
+/** \brief  Initialize zipdisk iterator \a iter with zipdisk \a zip
+ *
+ * \param[out]  iter    zipdisk iterator
+ * \param[in]   zip     zipdisk handle
+ *
+ * \return  true on success
+ */
 bool zcc_zipdisk_iter_init(zcc_zipdisk_iter_t *iter, zcc_zipdisk_t *zip)
 {
     iter->zip = zip;
@@ -270,10 +288,20 @@ bool zcc_zipdisk_iter_init(zcc_zipdisk_iter_t *iter, zcc_zipdisk_t *zip)
     return iter_current_block_info(iter);
 }
 
+
+/** \brief  Move zipdisk iterator \a iter to the next block
+ *
+ * \param[in,out]   iter    zipdisk iterator
+ *
+ * \return  true when a next block was found, false on end of archive, or error
+ *
+ * \throw   ZCC_ERR_ZC_INVALID_PACK_METHOD
+ */
 bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter)
 {
-    int offset;
-    uint8_t *data;
+    int offset;         /* offset to next block in the current slice */
+    uint8_t *data;      /* current block's data, includes the zipcode
+                           track+packmethod,sector data */
 
     if (iter_current_block_info(iter)) {
         /* got current block, get the next one */
@@ -291,15 +319,11 @@ bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter)
                 break;
             default:
                 offset = -1;
-                break;
+                zcc_errno = ZCC_ERR_ZC_INVALID_PACK_METHOD;
+                return false;
         }
-        if (offset < 0) {
-            /* failed */
-            return false;
-        } else {
-            iter->slice_offset += (size_t)offset;
-            iter_current_block_info(iter);
-        }
+        iter->slice_offset += (size_t)offset;
+        iter_current_block_info(iter);
     } else {
         /* end of slice, check if we have another one */
         printf("Getting next slice\n");
@@ -311,6 +335,7 @@ bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter)
         iter->slice_index++;
         iter->slice_offset = 2;     /* skip load address */
         if (!iter_current_block_info(iter)) {
+            /* error code already set */
             return false;
         }
     }
@@ -320,7 +345,12 @@ bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter)
 }
 
 
-
+/** \brief  Test hook: test the zipdisk iterator
+ *
+ * \param[in]   path    path to zipdisk archive
+ *
+ * \return  true on success
+ */
 bool zcc_zipdisk_test_iter(const char *path)
 {
     zcc_zipdisk_t zip;
@@ -353,6 +383,55 @@ bool zcc_zipdisk_test_iter(const char *path)
 
     printf("Cleaning up\n");
     zcc_zipdisk_free(&zip);
+    return true;
+}
+
+
+
+bool zcc_zipdisk_unzip(zcc_zipdisk_t *zip, const char *path)
+{
+    zcc_d64_t d64;
+    zcc_d64_type_t type = ZCC_D64_TYPE_CBMDOS;
+    zcc_zipdisk_iter_t iter;
+    uint8_t buffer[256];
+
+    if (zip->slice_count == 5) {
+        printf("Need 40-track image\n");
+        /* type doesn't really matter, as long it's 40 tracks, BAM gets
+         * overwritten anyway.
+         */
+        type = ZCC_D64_TYPE_SPEEDDOS;
+    }
+
+    /* create target D64 and allocate space and copy path */
+    zcc_d64_init(&d64);
+    zcc_d64_alloc(&d64, type);
+    d64.path = zcc_strdup(path);
+
+    /* init zipdisk iter */
+    if (!zcc_zipdisk_iter_init(&iter, zip)) {
+        zcc_d64_free(&d64);
+        return false;
+    }
+
+
+    do {
+        if (!zcc_unpack_block(buffer, iter.block_data)) {
+            zcc_perror(NULL);
+            zcc_d64_free(&d64);
+            return false;
+        }
+        printf("(%2d,%2d):\n", iter.track, iter.sector);
+        zcc_hexdump(buffer, 256, 0);
+
+        zcc_d64_block_write(&d64, buffer, iter.track, iter.sector);
+
+
+    } while (zcc_zipdisk_iter_next(&iter));
+
+    zcc_d64_write(&d64, path);
+    zcc_d64_free(&d64);
+
     return true;
 }
 

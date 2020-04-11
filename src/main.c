@@ -62,13 +62,22 @@ static void test_zcc_basename(void)
 
 static void test_zipdisk(void)
 {
-#if 0
     zcc_zipdisk_t zip;
-#endif
+
+
+
     printf("Testing zipdisk code:\n");
 
     zcc_zipdisk_test_iter(ZIPDISK_TEST_IMAGE);
 
+    zcc_zipdisk_init(&zip);
+    if (!zcc_zipdisk_read(&zip, ZIPDISK_TEST_IMAGE)) {
+        fprintf(stderr, "OOPS\n");
+        return;
+    }
+
+    zcc_zipdisk_unzip(&zip, "sphere-output.d64");
+    zcc_zipdisk_free(&zip);
 
 #if 0
     zcc_zipdisk_init(&zip);

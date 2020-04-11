@@ -56,8 +56,16 @@
  */
 #define ZCC_ZIPDISK_DATA    2
 
+/** \brief  Offset in a zipcode block of the RLE data size
+ */
 #define ZCC_ZIPDISK_RLE_LENGTH 2
+
+/** \brief  Offset in a zipcode block of the RLE packbyte
+ */
 #define ZCC_ZIPDISK_RLE_PACKBYTE 3
+
+/** \brief  Offset in a zipcode block of the actual RLE data
+ */
 #define ZCC_ZIPDISK_RLE_DATA 4
 
 
@@ -107,15 +115,35 @@ typedef struct zcc_zipdisk_s {
 } zcc_zipdisk_t;
 
 
+/** \brief  Object to easily iterate over zipdisk blocks
+ *
+ * This object allows easy iteration over the blocks in a zipdisk archive.
+ *
+ * Since zipdisk archives are a little fucked, this object and its related
+ * functions zcc_zipdisk_iter_init() and zcc_zipdisk_iter_next() allow for easy
+ * iteration over a zipdisk archive.
+ */
 typedef struct zcc_zipdisk_iter_s {
-    zcc_zipdisk_t * zip;
-    int             slice_index;
-    size_t          slice_offset;
-    int             block_nr;
-    uint8_t *       block_data;
-    int             track;
-    int             sector;
-    int             method;
+    zcc_zipdisk_t * zip;                /**< reference to 'parent' zipdisk */
+    int             slice_index;        /**< slice index in \c zip */
+    size_t          slice_offset;       /**< offset in current slice of the
+                                             current 'block', which reminds me:
+                                             I still have to explain the fact
+                                             that a 'slice' file in a zipdisk
+                                             archive either has two or four
+                                             leading bytes ($03fe, "c64") for
+                                             the first, $0400 for the next */
+    int             block_nr;           /**< block index in the result d64 */
+    uint8_t *       block_data;         /**< pointer to the data of the current
+                                             block of the iterator. Get's set
+                                             in the iterator code, so I suppose
+                                             this is a 'private' member */
+    int             track;              /**< current track number, this excludes
+                                             the pack-method bits, those are
+                                             stored in \c method, shifted */
+    int             sector;             /**< current sector number */
+    int             method;             /**< pack method of the block, shifted
+                                             so it's in the range %00-%11 */
 } zcc_zipdisk_iter_t;
 
 
@@ -130,6 +158,8 @@ bool zcc_zipdisk_write(zcc_zipdisk_t *zip, zcc_d64_t *d64);
 bool zcc_zipdisk_iter_init(zcc_zipdisk_iter_t *iter, zcc_zipdisk_t *zip);
 bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter);
 void zcc_zipdisk_iter_dump(const zcc_zipdisk_iter_t *iter);
+
+bool zcc_zipdisk_unzip(zcc_zipdisk_t *zip, const char *path);
 
 
 /*

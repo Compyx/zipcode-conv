@@ -44,7 +44,10 @@ static const char *err_msgs[] = {
     "I/O error",
     "track number out of range",
     "sector number out of range",
-    "invalid filename"
+    "invalid filename",
+    "RLE error",
+    "invalid zipcode data",
+    "invalid zipcode pack method"
 };
 
 

@@ -220,6 +220,26 @@ void zcc_d64_init(zcc_d64_t *d64)
 }
 
 
+/** \brief  Allocate memory in \a d64 for a D64 of \a type
+ *
+ * \param[in,out]   d64     D64 handle
+ * \param[in]       type    D64 type
+ */
+void zcc_d64_alloc(zcc_d64_t *d64, zcc_d64_type_t type)
+{
+    size_t size;
+
+    if (type ==  ZCC_D64_TYPE_CBMDOS) {
+        size = ZCC_D64_SIZE_CBMDOS;
+    } else {
+        size = ZCC_D64_SIZE_EXTENDED;
+    }
+
+    d64->data = zcc_calloc(size, 1LU);
+    d64->size = size;
+}
+
+
 /** \brief  Free memory used by member of \a d64
  *
  * \param[in,out]   d64 D64 handle
@@ -289,4 +309,27 @@ void zcc_d64_dump_info(const zcc_d64_t *d64)
 void zcc_d64_dump_bam(const zcc_d64_t *d64)
 {
     zcc_hexdump(d64->data + 0x16500, 256, 0x16500);
+}
+
+
+
+bool zcc_d64_write(zcc_d64_t *d64, const char *path)
+{
+    if (path == NULL && d64->path == NULL) {
+        zcc_errno = ZCC_ERR_INVALID_FILENAME;
+        return false;
+    }
+
+    /* use new path? */
+    if (path != NULL) {
+        if (d64->path != NULL) {
+            zcc_free(d64->path);
+            d64->path = zcc_strdup(path);
+        }
+    }
+
+    if (zcc_fwrite(d64->path, d64->data, d64->size)) {
+        return false;
+    }
+    return true;
 }

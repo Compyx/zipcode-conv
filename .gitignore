@@ -11,4 +11,4 @@
 # target objects
 *.exe
 zipcode-conv
-
+*.d64

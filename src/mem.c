@@ -56,6 +56,18 @@ void *zcc_malloc(size_t n)
 }
 
 
+void *zcc_calloc(size_t nmemb, size_t size)
+{
+    void *p = calloc(nmemb, size);
+
+    if (p == NULL) {
+        fprintf(stderr, "fatal: failed to allocate %lu bytes.\n",
+                (unsigned long)(nmemb * size));
+        exit(1);
+    }
+    return p;
+}
+
 /** \brief  Rellocate memory at \a p to \n bytes
  *
  * \param[in,out]   p   memory to reallocate

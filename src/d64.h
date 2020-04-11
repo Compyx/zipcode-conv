@@ -111,8 +111,10 @@ long zcc_d64_block_offset(int track, int sector);
 long zcc_d64_track_offset(int track);
 bool zcc_d64_track_is_valid(const zcc_d64_t *d64, int track);
 void zcc_d64_init(zcc_d64_t *d64);
+void zcc_d64_alloc(zcc_d64_t *d64, zcc_d64_type_t type);
 void zcc_d64_free(zcc_d64_t *d64);
 bool zcc_d64_read(zcc_d64_t *d64, const char *path, zcc_d64_type_t type);
+bool zcc_d64_write(zcc_d64_t *d64, const char *path);
 void zcc_d64_dump_info(const zcc_d64_t *d64);
 void zcc_d64_dump_bam(const zcc_d64_t *d64);
 
