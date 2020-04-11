@@ -1,7 +1,7 @@
 /* vim: set et ts=4 sw=4 sts=4 fdm=marker syntax=c.doxygen: */
 
-/** \file   io.h
- * \brief   I/O handling - header
+/** \file   rle.h
+ * \brief   Run-Length Encoding handling - header
  */
 
 /*
@@ -24,19 +24,15 @@
  *
  */
 
-#ifndef ZCC_IO_H
-#define ZCC_IO_H
+#ifndef ZCC_RLE_H
+#define ZCC_RLE_H
 
-#include <stddef.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#define zcc_debug 
 
+int zcc_rle_decode(uint8_t *dest, const uint8_t *src, int run, int len);
 
-long zcc_fread_alloc(uint8_t **dest, const char *path);
-bool zcc_fwrite(const char *path, const uint8_t *data, size_t size);
-
-char *zcc_basename(char *path);
 
 #endif

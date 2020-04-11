@@ -34,6 +34,7 @@
 #include "errors.h"
 #include "mem.h"
 #include "io.h"
+#include "rle.h"
 
 #include "zipdisk.h"
 
@@ -136,6 +137,8 @@ bool zcc_zipdisk_read(zcc_zipdisk_t *zip, const char *path)
 }
 
 
+
+
 /** \brief  Debug hook: dump information on \a slice in \a zip
  *
  * \param[in]   zip     zipdisk handle
@@ -162,6 +165,7 @@ void zcc_zipdisk_dump_slice(zcc_zipdisk_t *zip, int slice)
     while (p < data + size) {
         int track = p[0];
         int sector = p[1];
+        int rle_result;
 
         printf("(%2d,%2d): %s: ",
                 track & 0x3f, sector, zipdisk_pack_methods[track >> 6]);
@@ -177,8 +181,12 @@ void zcc_zipdisk_dump_slice(zcc_zipdisk_t *zip, int slice)
                 p += 1;
                 break;
             case ZCC_PACK_RLE:
-                printf("packbyte: $%02x, data: $%04x bytes",
+                printf("packbyte: $%02x, data: $%04x bytes\n",
                         p[3], p[2]);
+
+                rle_result = zcc_rle_decode(NULL, p + 4, p[3], p[2]);
+                printf("rle result = %d", rle_result);
+
                 p += p[2] + 2;
                 break;
             default:
@@ -188,3 +196,163 @@ void zcc_zipdisk_dump_slice(zcc_zipdisk_t *zip, int slice)
         putchar('\n');
     }
 }
+
+
+static bool zcc_unpack_block(uint8_t *dest, uint8_t *src)
+{
+    int track = src[ZCC_ZIPDISK_TRACK] & 0x3f;
+    int sector = src[ZCC_ZIPDISK_SECTOR];
+    int method = src[ZCC_ZIPDISK_TRACK] >> 6;
+
+    printf("track %d, sector %d, pack method %d (%s)\n",
+            track, sector, method, zipdisk_pack_methods[method]);
+
+    switch (method) {
+        case ZCC_PACK_NONE:
+            memcpy(dest, src + ZCC_ZIPDISK_DATA, 256);
+            break;
+        default:
+            return false;
+    }
+
+    return true;
+}
+
+#if 0
+bool zcc_zipdisk_write(zcc_zipdisk_t *zip, zcc_d64_t *d64)
+{
+    return true;
+}
+#endif
+
+
+static bool iter_current_block_info(zcc_zipdisk_iter_t *iter)
+{
+    zcc_zipdisk_slice_t slice;
+    uint8_t *data;
+
+    slice = iter->zip->slices[iter->slice_index];
+
+    if (iter->slice_offset >= slice.size) {
+        /* end of slice */
+        return false;
+    }
+
+    data = slice.data + iter->slice_offset;
+    iter->track = data[ZCC_ZIPDISK_TRACK] & 0x3f;
+    iter->sector = data[ZCC_ZIPDISK_SECTOR];
+    iter->method = data[ZCC_ZIPDISK_TRACK] >> 6U;
+    iter->block_data = data;
+    return true;
+}
+
+
+/** \brief  Dump information of the state of \a iter on stdout
+ *
+ * \param[in]   iter    zipdisk iterator
+ */
+void zcc_zipdisk_iter_dump(const zcc_zipdisk_iter_t *iter)
+{
+    printf("slice #%d (offset: $%04lx), blk %3d (%2d,%2d), %s\n",
+            iter->slice_index, (unsigned long)(iter->slice_offset),
+            iter->block_nr, iter->track, iter->sector,
+            zipdisk_pack_methods[iter->method]);
+}
+
+bool zcc_zipdisk_iter_init(zcc_zipdisk_iter_t *iter, zcc_zipdisk_t *zip)
+{
+    iter->zip = zip;
+    iter->slice_index = 0;
+    iter->slice_offset = 4;
+    iter->block_nr = 0;
+    iter->block_data = NULL;
+
+    return iter_current_block_info(iter);
+}
+
+bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter)
+{
+    int offset;
+    uint8_t *data;
+
+    if (iter_current_block_info(iter)) {
+        /* got current block, get the next one */
+        switch (iter->method) {
+            case ZCC_PACK_NONE:
+                /* full raw block of 256 bytes */
+                offset = 256 + 2;
+                break;
+            case ZCC_PACK_FILL:
+                offset = 3;
+                break;
+            case ZCC_PACK_RLE:
+                data = iter->block_data;
+                offset = data[ZCC_ZIPDISK_RLE_LENGTH] + 4;
+                break;
+            default:
+                offset = -1;
+                break;
+        }
+        if (offset < 0) {
+            /* failed */
+            return false;
+        } else {
+            iter->slice_offset += (size_t)offset;
+            iter_current_block_info(iter);
+        }
+    } else {
+        /* end of slice, check if we have another one */
+        printf("Getting next slice\n");
+        if (iter->slice_index >= iter->zip->slice_count + 1) {
+            /* end of archive */
+            printf("End of archive\n");
+            return false;
+        }
+        iter->slice_index++;
+        iter->slice_offset = 2;     /* skip load address */
+        if (!iter_current_block_info(iter)) {
+            return false;
+        }
+    }
+
+    iter->block_nr++;
+    return true;
+}
+
+
+
+bool zcc_zipdisk_test_iter(const char *path)
+{
+    zcc_zipdisk_t zip;
+    zcc_zipdisk_iter_t iter;
+
+    printf("Attempting to load zipdisk archive '%s' .. ", path);
+    zcc_zipdisk_init(&zip);
+    if (!zcc_zipdisk_read(&zip, path)) {
+        printf("failed: ");
+        zcc_perror(NULL);
+        return false;
+    }
+    printf("OK.\n");
+
+    printf("Initializing iterator .. ");
+    if (!zcc_zipdisk_iter_init(&iter, &zip)) {
+        printf("failed: ");
+        zcc_perror(NULL);
+        zcc_zipdisk_free(&zip);
+        return false;
+    }
+    printf("OK.\n");
+    zcc_zipdisk_iter_dump(&iter);
+
+    /* iterate */
+    while (zcc_zipdisk_iter_next(&iter)) {
+        zcc_zipdisk_iter_dump(&iter);
+    }
+
+
+    printf("Cleaning up\n");
+    zcc_zipdisk_free(&zip);
+    return true;
+}
+

@@ -62,10 +62,15 @@ static void test_zcc_basename(void)
 
 static void test_zipdisk(void)
 {
+#if 0
     zcc_zipdisk_t zip;
-
+#endif
     printf("Testing zipdisk code:\n");
 
+    zcc_zipdisk_test_iter(ZIPDISK_TEST_IMAGE);
+
+
+#if 0
     zcc_zipdisk_init(&zip);
     if (zcc_zipdisk_read(&zip, ZIPDISK_TEST_IMAGE)) {
         for (int i = 0; i < zip.slice_count; i++) {
@@ -74,6 +79,7 @@ static void test_zipdisk(void)
     }
 
     zcc_zipdisk_free(&zip);
+#endif
 }
 
 

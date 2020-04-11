@@ -13,7 +13,7 @@ CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wredundant-decls -Wnested-externs -Wunreachable-code \
 	-g -O3 -Wformat
 
-OBJS = main.o errors.o mem.o io.o d64.o zipdisk.o
+OBJS = main.o errors.o mem.o io.o d64.o rle.o zipdisk.o
 HEADERS =
 
 TARGET = zipcode-conv
