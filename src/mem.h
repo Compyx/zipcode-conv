@@ -28,7 +28,8 @@
 #define ZCC_MEM_H
 
 #include <stddef.h>
-
+#include <stdint.h>
+#include <stdbool.h>
 
 void *zcc_malloc(size_t n);
 void *zcc_calloc(size_t nmemb, size_t size);

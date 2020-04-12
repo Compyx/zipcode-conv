@@ -2,7 +2,7 @@
 VPATH=src
 CC=gcc
 LD=gcc
-VPATH=src
+VPATH=src tests
 
 INSTALL_PREFIX=/usr/local
 
@@ -11,16 +11,22 @@ CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes \
 	-Wswitch-default -Wswitch-enum -Wuninitialized -Wconversion \
 	-Wredundant-decls -Wnested-externs -Wunreachable-code \
-	-g -O3 -Wformat
+	-g -O3 -Wformat \
+	-DEBUG_ZCC -DDEBUG_CMDLINE -DDEBUG_UNITTEST
 
-OBJS = main.o errors.o mem.o io.o d64.o rle.o zipdisk.o
-HEADERS =
 
-TARGET = zipcode-conv
+BIN_PROG = zipcode-conv
+BIN_TEST = unit_tests
+
+all: $(BIN_PROG) $(BIN_TEST)
+
+BASE_OBJS = cmdline.o errors.o mem.o io.o strlist.o
+PROG_OBJS = d64.o rle.o zipdisk.o $(BASE_OBJS)
+TEST_OBJS = unit.o $(BASE_OBJS)
+
+
 DOCS = doc/doxygen
 
-
-all: $(TARGET)
 
 .PHONY: doc
 doc:
@@ -40,5 +46,11 @@ install:
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(TARGET): $(OBJS)
-	$(LD) -o $(TARGET) $(OBJS)
+$(BIN_PROG): src/main.o $(PROG_OBJS)
+	$(LD) -o $@ $^
+
+$(BIN_TEST): tests/unit_tests.o $(TEST_OBJS)
+	$(LD) -o $@ $^
+
+
+

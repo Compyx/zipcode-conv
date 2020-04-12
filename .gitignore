@@ -11,4 +11,5 @@
 # target objects
 *.exe
 zipcode-conv
+unit_tests
 *.d64
