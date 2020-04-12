@@ -33,7 +33,13 @@
 #include "d64.h"
 
 
+/** \brief  Maximum number of slices in a zipdisk archive
+ *
+ * This is actually 5, but I'll probably refactoring this to allow handling
+ * of zipfile and sixzip archives
+ */
 #define ZCC_ZIPCODE_SLICE_MAX   6
+
 
 /** \brief  Offset in a zipcoded block of the track number/compression method
  *
@@ -83,7 +89,7 @@ typedef enum zcc_pack_e {
  *
  * Represents the data in a '[1-5]!*' file.
  *
- * The filename of the slice can be reconstructed via its parent #zcc_disk_t
+ * The filename of the slice can be reconstructed via its parent #zcc_zipdisk_t
  */
 typedef struct zcc_zipdisk_slice_s {
     uint8_t *   data;   /**< file data */
@@ -153,7 +159,9 @@ void zcc_zipdisk_free(zcc_zipdisk_t *zip);
 bool zcc_zipdisk_read(zcc_zipdisk_t *zip, const char *path);
 void zcc_zipdisk_dump_slice(zcc_zipdisk_t *zip, int slice);
 
+#if 0
 bool zcc_zipdisk_write(zcc_zipdisk_t *zip, zcc_d64_t *d64);
+#endif
 
 bool zcc_zipdisk_iter_init(zcc_zipdisk_iter_t *iter, zcc_zipdisk_t *zip);
 bool zcc_zipdisk_iter_next(zcc_zipdisk_iter_t *iter);

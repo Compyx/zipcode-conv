@@ -39,8 +39,12 @@
 
 
 #ifndef __WIN32
+/** \brief  Path separator token
+ */
 # define ZCC_PATH_SEP   '/'
 #else
+/** \brief  Path separator token
+ */
 # define ZCC_PATH_SEP   '\\'
 #endif
 
@@ -159,6 +163,13 @@ bool zcc_fwrite(const char *path, const uint8_t *data, size_t size)
 }
 
 
+/** \brief  Get pointer to basename of \a path
+ *
+ * \param[in]   path    path
+ *
+ * \return  basename of \a path, or \a path when no path separator could be
+ *          located in \a path
+ */
 char *zcc_basename(char *path)
 {
     size_t len = strlen(path);

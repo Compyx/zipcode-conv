@@ -198,6 +198,16 @@ void zcc_zipdisk_dump_slice(zcc_zipdisk_t *zip, int slice)
 }
 
 
+/** \brief  Unpack a zipdisk block
+ *
+ * Unpacks a zipdisk block into a buffer. The \a dest should point to a buffer
+ * of at least 256 bytes, the \a src should contain the track/sector bytes.
+ *
+ * \param   [out]   dest    destination of the unpacked block
+ * \param   [in]    src     zipcoded block to depack
+ *
+ * \return  boolean
+ */
 static bool zcc_unpack_block(uint8_t *dest, uint8_t *src)
 {
     int track = src[ZCC_ZIPDISK_TRACK] & 0x3f;
@@ -236,6 +246,15 @@ bool zcc_zipdisk_write(zcc_zipdisk_t *zip, zcc_d64_t *d64)
 #endif
 
 
+/** \brief  Get current block data from \a iter
+ *
+ * Reads data from the current zipcode block in \a iter and stores track,
+ * sector, pack-method and a pointer to the block's data in \a iter.
+ *
+ * \param[in,out]   iter    zipdisk block iter
+ *
+ * \return  boolean
+ */
 static bool iter_current_block_info(zcc_zipdisk_iter_t *iter)
 {
     zcc_zipdisk_slice_t slice;
@@ -387,7 +406,13 @@ bool zcc_zipdisk_test_iter(const char *path)
 }
 
 
-
+/** \brief  Unzip zipdisk \a zip into a new D64 at \a path
+ *
+ * \param[in]   zip     zipdisk handle
+ * \param[in]   path    path to write D64 file to
+ *
+ * \return  boolean
+ */
 bool zcc_zipdisk_unzip(zcc_zipdisk_t *zip, const char *path)
 {
     zcc_d64_t d64;

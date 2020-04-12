@@ -205,11 +205,9 @@ bool zcc_d64_block_write(zcc_d64_t *d64,
 }
 
 
-
-
 /** \brief  Initialize \a d64 for use
  *
- * \param[in,out]   d64 D64 handle
+ * \param[out]  d64 D64 handle
  */
 void zcc_d64_init(zcc_d64_t *d64)
 {
@@ -312,7 +310,18 @@ void zcc_d64_dump_bam(const zcc_d64_t *d64)
 }
 
 
-
+/** \brief  Write \a d64 to host file system
+ *
+ * Write the image in \a d64 to the host file system. If \a path is `NULL`, use
+ * the path in \a d64. If that is also `NULL`, fail. Using a non-NULL \a path
+ * will replace the old path in \a d64.
+ *
+ * \param[in,out]   d64     D64 handle
+ * \param[in]       path    path to write to (NULL to use \a d64's path
+ *
+ * \return  boolean
+ * \throw   ZCC_ERR_INVALID_FILENAME
+ */
 bool zcc_d64_write(zcc_d64_t *d64, const char *path)
 {
     if (path == NULL && d64->path == NULL) {

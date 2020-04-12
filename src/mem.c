@@ -56,6 +56,15 @@ void *zcc_malloc(size_t n)
 }
 
 
+/** \brief  Allocate and zero-out memory
+ *
+ * \param[in]   nmemb   number of elements
+ * \param[in]   size    size of elements
+ *
+ * \return  heap-allocated and zeroed-out memory
+ *
+ * \note    In case of failure, this acts like xmalloc(), ie calls exit(1)
+ */
 void *zcc_calloc(size_t nmemb, size_t size)
 {
     void *p = calloc(nmemb, size);
@@ -163,6 +172,3 @@ void zcc_hexdump(const uint8_t *src, size_t len, size_t voffset)
         voffset += 16;
     }
 }
-
-
-

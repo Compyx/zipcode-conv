@@ -16,6 +16,7 @@
  * Forward declarations
  */
 
+
 static bool setup(void);
 static bool teardown(void);
 
@@ -51,6 +52,8 @@ unit_module_t unittest_module = {
  *
  * Currently doesn't do anything, except report it got called (with --debug)
  * and return `true`.
+ *
+ * \return  true
  */
 static bool setup(void)
 {
@@ -66,6 +69,8 @@ static bool setup(void)
  *
  * Doesn't do anything except reporting it get called (with --debug) and
  * return `true`
+ *
+ * \return  true
  */
 static bool teardown(void)
 {

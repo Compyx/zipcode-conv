@@ -9,8 +9,8 @@ INSTALL_PREFIX=/usr/local
 CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes \
 	-Wswitch-default -Wswitch-enum -Wuninitialized -Wconversion \
-	-Wredundant-decls -Wnested-externs -Wunreachable-code \
-	-g -O3 -Wformat \
+	-Wredundant-decls -Wnested-externs -Wunreachable-code -Wformat \
+	-g -O3 \
 	-DDEBUG_ZCC -DDEBUG_CMDLINE -DDEBUG_UNITTEST
 
 

@@ -38,6 +38,10 @@
  */
 #define D64_TEST_IMAGE  "data/d64/gumbo_dec2019.d64"
 
+/** \brief  Test image for src/zipdisk.c
+ *
+ * This is a correct archive, so proper code should not fail on this archive
+ */
 #define ZIPDISK_TEST_IMAGE  "data/zipdisk/1!SPHERE.Z64"
 
 
@@ -59,7 +63,10 @@ static void test_zcc_basename(void)
 }
 
 
-
+/** \brief  Run some tests on src/zipdisk.c
+ *
+ * Should be removed, and proper tests added to ./tests/
+ */
 static void test_zipdisk(void)
 {
     zcc_zipdisk_t zip;
