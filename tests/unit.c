@@ -32,7 +32,7 @@ static unit_module_t *unit_module_find_by_name(const char *name);
 
 /** \brief  Array of unit test module references
  */
-static unit_module_t *modules[UNIT_MODULE_MAX] = { NULL };
+static unit_module_t *modules[UNIT_MODULE_MAX];
 
 /** \brief  Number of registered modules
  */
@@ -278,9 +278,13 @@ void unit_dump_results(void)
     printf("    Modules run : %d\n", cummulative_modules);
     printf("    Total tests : %d\n", cummulative_tests_total);
     printf("    Tests passed: %d\n", cummulative_tests_passed);
-    printf("    Pass rate   : %.2f%%\n",
-            (float)cummulative_tests_passed / (float)cummulative_tests_total
-                * 100.0);
+    if (cummulative_tests_total > 0) {
+        printf("    Pass rate   : %.2f%%\n",
+                (float)cummulative_tests_passed / (float)cummulative_tests_total
+                    * 100.0);
+    } else {
+        printf("    Pass rate:  : 0%%\n");
+    }
 }
 
 
@@ -292,7 +296,7 @@ bool unit_module_run_all(void)
 {
     for (size_t i = 0; modules[i]->name != NULL; i++) {
         printf("Running module '%s':\n", modules[i]->name);
-        if (unit_module_exec(modules[i])) {
+        if (!unit_module_exec(modules[i])) {
             return false;
         }
     }

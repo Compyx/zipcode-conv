@@ -16,11 +16,9 @@
 /*
  * test modules
  */
-#if 0
 #include "test_unittest.h"
-#include "test_objpool.h"
+#if 0
 #include "test_mem.h"
-#include "test_cpu.h"
 #include "test_io.h"
 #endif
 
@@ -66,11 +64,10 @@ static const cmdline_option_t unit_cmdline_options[] = {
 static void register_modules(void)
 {
     printf("Registering modules...\n");
-#if 0
+
     unit_module_add(&unittest_module);
+#if 0
     unit_module_add(&mem_module);
-    unit_module_add(&objpool_module);
-    unit_module_add(&cpu_module);
     unit_module_add(&io_module);
 #endif
 }

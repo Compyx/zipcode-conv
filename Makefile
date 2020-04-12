@@ -1,8 +1,7 @@
 # vim: set noet ts=8:
-VPATH=src
+VPATH=src:tests
 CC=gcc
-LD=gcc
-VPATH=src tests
+LD=$(CC)
 
 INSTALL_PREFIX=/usr/local
 
@@ -12,7 +11,7 @@ CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wswitch-default -Wswitch-enum -Wuninitialized -Wconversion \
 	-Wredundant-decls -Wnested-externs -Wunreachable-code \
 	-g -O3 -Wformat \
-	-DEBUG_ZCC -DDEBUG_CMDLINE -DDEBUG_UNITTEST
+	-DDEBUG_ZCC -DDEBUG_CMDLINE -DDEBUG_UNITTEST
 
 
 BIN_PROG = zipcode-conv
@@ -22,7 +21,8 @@ all: $(BIN_PROG) $(BIN_TEST)
 
 BASE_OBJS = cmdline.o errors.o mem.o io.o strlist.o
 PROG_OBJS = d64.o rle.o zipdisk.o $(BASE_OBJS)
-TEST_OBJS = unit.o $(BASE_OBJS)
+TEST_OBJS = unit.o $(BASE_OBJS) \
+	    test_unittest.o
 
 
 DOCS = doc/doxygen
@@ -46,10 +46,10 @@ install:
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BIN_PROG): src/main.o $(PROG_OBJS)
+$(BIN_PROG): main.o $(PROG_OBJS)
 	$(LD) -o $@ $^
 
-$(BIN_TEST): tests/unit_tests.o $(TEST_OBJS)
+$(BIN_TEST): unit_tests.o $(TEST_OBJS)
 	$(LD) -o $@ $^
 
 
