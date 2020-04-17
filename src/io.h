@@ -31,7 +31,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define zcc_debug 
 
 
 long zcc_fread_alloc(uint8_t **dest, const char *path);

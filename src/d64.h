@@ -70,9 +70,29 @@
  */
 #define ZCC_D64_BLOCK_SIZE_RAW  256
 
+
+#define ZCC_D64_DIRENT_SIZE     0x20
+
 /** \brief  Size of the data section of a block
  */
 #define ZCC_D64_BLOCK_SIZE_DATA 254
+
+#define ZCC_D64_DIRENT_DIR_TRACK    0x00
+#define ZCC_D64_DIRENT_DIR_SECTOR   0x01
+#define ZCC_D64_DIRENT_FILETYPE     0x02
+#define ZCC_D64_DIRENT_TRACK        0x03
+#define ZCC_D64_DIRENT_SECTOR       0x04
+#define ZCC_D64_DIRENT_FILENAME     0x05
+#define ZCC_D64_DIRENT_SSB_TRACK    0x15
+#define ZCC_D64_DIRENT_SSB_SECTOR   0x16
+#define ZCC_D64_DIRENT_REL_LENGTH   0x17
+#define ZCC_D64_DIRENT_GEOS         0x18
+#define ZCC_D64_DIRENT_BLOCKS_LOW   0x1e
+#define ZCC_D64_DIRENT_BLOCKS_HIGH  0x1f
+
+
+
+
 
 
 /** \brief  D64 types
@@ -107,6 +127,36 @@ typedef struct zcc_d64_s {
 } zcc_d64_t;
 
 
+#define ZCC_CBMDOS_FILENAME_MAX 16
+
+
+/** \brief  D64 dirent
+ */
+typedef struct zcc_d64_dirent_s {
+    zcc_d64_t *d64;
+    uint8_t name[ZCC_CBMDOS_FILENAME_MAX];
+    uint8_t type;
+    uint16_t blocks;
+    int track;
+    int sector;
+} zcc_d64_dirent_t;
+
+
+
+#define ZCC_D64_DISKNAME_MAXLEN    16
+#define ZCC_D64_DISKID_MAXLEN      5
+
+
+/** \brief  D64 dir
+ */
+typedef struct zcc_d64_dir_s {
+    zcc_d64_t *d64;
+    uint8_t diskname[ZCC_D64_DISKNAME_MAXLEN];
+    uint8_t diskid[ZCC_D64_DISKID_MAXLEN];
+    zcc_d64_dirent_t entries[144];
+    int entry_count;
+} zcc_d64_dir_t;
+
 long zcc_d64_block_offset(int track, int sector);
 long zcc_d64_track_offset(int track);
 bool zcc_d64_track_is_valid(const zcc_d64_t *d64, int track);
@@ -124,6 +174,10 @@ bool zcc_d64_block_read(const zcc_d64_t *d64,
 bool zcc_d64_block_write(zcc_d64_t *d64,
                          const uint8_t *buffer,
                          int track, int sector);
+
+
+
+void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent);
 
 #endif
 

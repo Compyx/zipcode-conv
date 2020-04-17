@@ -123,3 +123,20 @@ strlist_t *strlist_dup(const strlist_t *slist)
     }
     return newlist;
 }
+
+
+/** \brief  Get string at \a index in \a list
+ *
+ * \param[in]   list    string list
+ * \param[in]   index   index in list
+ *
+ * \return  string or `NULL` on error
+ */
+char *strlist_get(strlist_t *list, int index)
+{
+    if (index < 0 || index >= (int)(list->items_used)) {
+        return NULL;
+    }
+    return list->items[index];
+}
+

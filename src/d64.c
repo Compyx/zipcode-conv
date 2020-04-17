@@ -342,3 +342,25 @@ bool zcc_d64_write(zcc_d64_t *d64, const char *path)
     }
     return true;
 }
+
+
+void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent)
+{
+    dirent->d64 = NULL;
+    memset(dirent->name, 0, ZCC_D64_DISKNAME_MAXLEN);
+    dirent->type = 0;
+    dirent->blocks = 0;
+    dirent->track = -1;
+    dirent->sector = -1;
+}
+
+
+
+bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
+{
+    dirent->track = data[ZCC_D64_DIRENT_TRACK];
+    dirent->sector = data[ZCC_D64_DIRENT_SECTOR];
+    memcpy(dirent->name, data + ZCC_D64_DIRENT_FILENAME, ZCC_CBMDOS_FILENAME_MAX);
+
+
+}

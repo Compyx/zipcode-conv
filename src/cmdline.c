@@ -375,9 +375,13 @@ void cmdline_list_options(void)
             c += printf(" %s", arg_desc);
         }
 
-        while (c < 40) {
-            putchar(' ');
-            c++;
+        if (c < 40) {
+            while (c < 40) {
+                putchar(' ');
+                c++;
+            }
+        } else {
+            putchar('\t');
         }
         printf("%s\n", option->description);
     }

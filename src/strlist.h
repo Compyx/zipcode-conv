@@ -10,8 +10,6 @@
 
 #include <stdlib.h>
 
-
-
 /** \brief  String list handle
  */
 typedef struct strlist_s {
@@ -27,6 +25,7 @@ strlist_t * strlist_dup(const strlist_t *slist);
 size_t      strlist_num_items(const strlist_t *slist);
 void        strlist_add(strlist_t *slist, const char *s);
 void        strlist_dump(const strlist_t *slist);
+char *      strlist_get(strlist_t *list, int index);
 
 #endif
 

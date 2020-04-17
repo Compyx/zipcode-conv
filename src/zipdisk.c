@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "debug.h"
 #include "errors.h"
 #include "mem.h"
 #include "io.h"
@@ -460,3 +461,29 @@ bool zcc_zipdisk_unzip(zcc_zipdisk_t *zip, const char *path)
     return true;
 }
 
+
+
+bool zcc_zipdisk_show_info(const char *path, bool verbose)
+{
+    zcc_zipdisk_t zip;
+
+    zcc_zipdisk_init(&zip);
+    zcc_debug("Reading zipfile data from '%s' .. ", path);
+    if (!zcc_zipdisk_read(&zip, path)) {
+        zcc_debug("failed!");
+        return false;
+    }
+    zcc_debug("OK.");
+
+    for (int i = 0; i < zip.slice_count; i++) {
+        if (verbose) {
+            printf("slice #%d:\n", i);
+            zcc_zipdisk_dump_slice(&zip, i);
+        } else {
+            printf("slice #%d: $%05lu bytes.\n", i, zip.slices[i].size);
+        }
+    }
+
+    zcc_zipdisk_free(&zip);
+    return true;
+}

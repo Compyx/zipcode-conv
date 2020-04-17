@@ -169,6 +169,8 @@ void zcc_zipdisk_iter_dump(const zcc_zipdisk_iter_t *iter);
 
 bool zcc_zipdisk_unzip(zcc_zipdisk_t *zip, const char *path);
 
+bool zcc_zipdisk_show_info(const char *path, bool verbose);
+
 
 /*
  * Testing/debuggin hooks
