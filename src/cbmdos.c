@@ -1,7 +1,7 @@
 /* vim: set et ts=4 sw=4 sts=4 fdm=marker syntax=c.doxygen : */
 
-/** \file   petasc.h
- * \brief   PETSCII to ASCII conversion and vice versa - header
+/** \file   cbmdos.c
+ * \brief   CBM-DOS generics
  *
  */
 
@@ -25,24 +25,30 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.*
  */
 
-#ifndef ZCC_PETASC_H
-#define ZCC_PETASC_H
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include "cbmdos.h"
 
 
-uint8_t zcc_pet_to_asc(uint8_t pet);
-uint8_t zcc_asc_to_pet(uint8_t asc);
-bool    zcc_is_host_allowed_char(int ch);
-void    zcc_pet_to_asc_str(char *asc, const uint8_t *pet, size_t n);
-void    zcc_asc_to_pet_str(uint8_t *pet, const char *asc, size_t n);
-void    zcc_pet_filename_to_host(char *asc, const uint8_t *pet, const char *ext);
-int     zcc_write_petscii_digits(uint8_t *pet, int value, size_t len);
-#if 0
-char *  zcc_basename(char *path);
-#endif
-
-
-#endif
+/** \brief  Get filetype string for \a type
+ *
+ * \param[in]   type    CBM-DOS file type
+ *
+ * \return  filetype string or '???'
+ */
+const char *zcc_cbmdos_filetype_str(zcc_cbmdos_filetype_t type)
+{
+    switch (type & ZCC_CBMDOS_FILETYPE_MASK) {
+        case ZCC_CBMDOS_FILETYPE_DEL:
+            return "del";
+        case ZCC_CBMDOS_FILETYPE_SEQ:
+            return "seq";
+        case ZCC_CBMDOS_FILETYPE_PRG:
+            return "prg";
+        case ZCC_CBMDOS_FILETYPE_USR:
+            return "usr";
+        case ZCC_CBMDOS_FILETYPE_REL:
+            return "rel";
+        default:
+            return "???";
+    }
+}

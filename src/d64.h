@@ -73,6 +73,9 @@
 
 #define ZCC_D64_DIRENT_SIZE     0x20
 
+#define ZCC_D64_DIRENT_GEOS_SIZE    0x06
+
+
 /** \brief  Size of the data section of a block
  */
 #define ZCC_D64_BLOCK_SIZE_DATA 254
@@ -87,9 +90,15 @@
 #define ZCC_D64_DIRENT_SSB_SECTOR   0x16
 #define ZCC_D64_DIRENT_REL_LENGTH   0x17
 #define ZCC_D64_DIRENT_GEOS         0x18
-#define ZCC_D64_DIRENT_BLOCKS_LOW   0x1e
-#define ZCC_D64_DIRENT_BLOCKS_HIGH  0x1f
+#define ZCC_D64_DIRENT_BLOCKS_LSB   0x1e
+#define ZCC_D64_DIRENT_BLOCKS_MSB   0x1f
 
+
+#define ZCC_D64_BAM_TRACK   18
+#define ZCC_D64_BAM_SECTOR   0
+
+#define ZCC_D64_DIR_TRACK   18
+#define ZCC_D64_DIR_SECTOR   1
 
 
 
@@ -133,13 +142,28 @@ typedef struct zcc_d64_s {
 /** \brief  D64 dirent
  */
 typedef struct zcc_d64_dirent_s {
-    zcc_d64_t *d64;
-    uint8_t name[ZCC_CBMDOS_FILENAME_MAX];
-    uint8_t type;
-    uint16_t blocks;
-    int track;
-    int sector;
+    zcc_d64_t * d64;
+    uint8_t     name[ZCC_CBMDOS_FILENAME_MAX];
+    uint8_t     geos[ZCC_D64_DIRENT_GEOS_SIZE];
+    uint16_t    blocks;
+    uint8_t     filetype;
+    uint8_t     dir_track;
+    uint8_t     dir_sector;
+    uint8_t     track;
+    uint8_t     sector;
+    uint8_t     ssb_track;
+    uint8_t     ssb_sector;
+    uint8_t     rel_length;
 } zcc_d64_dirent_t;
+
+
+typedef struct zcc_d64_dirent_iter_s {
+    zcc_d64_t *d64; /**< reference to D64 */
+    zcc_d64_dirent_t dirent;
+    int sector;     /**< sector number in track 18 */
+    int offset;     /**< offset in current dir sector */
+    int index;      /**< dirent index in d64 */
+} zcc_d64_dirent_iter_t;
 
 
 
@@ -150,6 +174,8 @@ typedef struct zcc_d64_dirent_s {
 #define ZCC_D64_BAM_DISKNAME    0x90
 #define ZCC_D64_BAM_DISKID      0xa5
 
+#define ZCC_D64_DIRENT_MAX  144
+
 
 /** \brief  D64 dir
  */
@@ -157,7 +183,7 @@ typedef struct zcc_d64_dir_s {
     zcc_d64_t *         d64;
     uint8_t             diskname[ZCC_D64_DISKNAME_MAXLEN];
     uint8_t             diskid[ZCC_D64_DISKID_MAXLEN];
-    zcc_d64_dirent_t    entries[144];
+    zcc_d64_dirent_t    entries[ZCC_D64_DIRENT_MAX];
     int                 entry_count;
 } zcc_d64_dir_t;
 
@@ -183,8 +209,14 @@ bool zcc_d64_block_write(zcc_d64_t *d64,
 
 
 void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent);
-
 bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data);
+
+
+bool zcc_d64_dirent_iter_init(zcc_d64_dirent_iter_t *iter, zcc_d64_t *d64);
+bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter);
+void zcc_d64_dirent_iter_read_dirent(zcc_d64_dirent_iter_t *iter,
+                                     zcc_d64_dirent_t *dirent);
+void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter);
 
 
 void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t * d64);

@@ -14,8 +14,8 @@
  */
 
 /*
- *  CbmFM - a file manager for CBM 8-bit emulation files
- *  Copyright (C) 2018  Bas Wassink <b.wassink@ziggo.nl>
+ * This file is part of zipcode-conv
+ *  Copyright (C) 2020  Bas Wassink <b.wassink@ziggo.nl>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,15 +41,16 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "cbmdos.h"
+
 #include "petasc.h"
 
 
-#define ZCC_CBMDOS_FILENAME_LEN 16
 
 
 /** \brief  PETSCII to ASCII translation table
  */
-static uint8_t pet_to_asc_table[256] = {
+static const uint8_t pet_to_asc_table[256] = {
     /* $00 - $0f */
     0x00, 0x01, 0x02, 0x1b, /* $03: PETSCII STOP -> ASCII Escape */
     0x04, 0x05, 0x06, 0x07,
@@ -106,7 +107,7 @@ static uint8_t pet_to_asc_table[256] = {
 
 /** \brief  ASCII to PETSCII translation table
  */
-static uint8_t asc_to_pet_table[256] = {
+static const uint8_t asc_to_pet_table[256] = {
     /* $00-$0f */
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x14, /* $08: ASCII Backspace -> PETSCII Delete */

@@ -1,7 +1,7 @@
 /* vim: set et ts=4 sw=4 sts=4 fdm=marker syntax=c.doxygen : */
 
-/** \file   petasc.h
- * \brief   PETSCII to ASCII conversion and vice versa - header
+/** \file   cbmdos.h
+ * \brief   CBM-DOS generics - header
  *
  */
 
@@ -25,24 +25,34 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.*
  */
 
-#ifndef ZCC_PETASC_H
-#define ZCC_PETASC_H
+#ifndef ZCC_CBMDOS_H
+#define ZCC_CBMDOS_H
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
+/** \brief  Maximum length of a CBM DOS filename in PETSCII
+ */
+#define ZCC_CBMDOS_FILENAME_LEN 16
 
 
-uint8_t zcc_pet_to_asc(uint8_t pet);
-uint8_t zcc_asc_to_pet(uint8_t asc);
-bool    zcc_is_host_allowed_char(int ch);
-void    zcc_pet_to_asc_str(char *asc, const uint8_t *pet, size_t n);
-void    zcc_asc_to_pet_str(uint8_t *pet, const char *asc, size_t n);
-void    zcc_pet_filename_to_host(char *asc, const uint8_t *pet, const char *ext);
-int     zcc_write_petscii_digits(uint8_t *pet, int value, size_t len);
-#if 0
-char *  zcc_basename(char *path);
-#endif
+/** \brief  File type enumerator
+ */
+typedef enum zcc_cbmdos_filetype_e {
+    ZCC_CBMDOS_FILETYPE_DEL = 0,    /**< DELeted file */
+    ZCC_CBMDOS_FILETYPE_SEQ,        /**< SEQuental file */
+    ZCC_CBMDOS_FILETYPE_PRG,        /**< PRoGram file */
+    ZCC_CBMDOS_FILETYPE_USR,        /**< USeR file */
+    ZCC_CBMDOS_FILETYPE_REL         /**< RELative file */
+} zcc_cbmdos_filetype_t;
 
+
+/** \brief  Bitmask to filter out file type of a filetype byte
+ */
+#define ZCC_CBMDOS_FILETYPE_MASK    0x07
+
+#define ZCC_CBMDOS_LOCKED_MASK      0x40
+
+#define ZCC_CBMDOS_CLOSED_MASK      0x80
+
+
+const char *zcc_cbmdos_filetype_str(zcc_cbmdos_filetype_t type);
 
 #endif

@@ -31,9 +31,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "cbmdos.h"
 #include "errors.h"
 #include "mem.h"
 #include "io.h"
+#include "petasc.h"
 
 #include "d64.h"
 
@@ -352,22 +354,115 @@ void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent)
 {
     dirent->d64 = NULL;
     memset(dirent->name, 0, ZCC_D64_DISKNAME_MAXLEN);
-    dirent->type = 0;
+    memset(dirent->geos, 0, ZCC_D64_DIRENT_GEOS_SIZE);
+    dirent->filetype = 0;
     dirent->blocks = 0;
-    dirent->track = -1;
-    dirent->sector = -1;
+    dirent->track = 0;
+    dirent->sector = 0;
+    dirent->dir_track = 0;
+    dirent->dir_sector = 0;
+    dirent->rel_length = 0;
+    dirent->ssb_track = 0;
+    dirent->ssb_sector = 0;
 }
 
 
 
 bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
 {
+    dirent->dir_track = data[ZCC_D64_DIRENT_DIR_TRACK];
+    dirent->dir_sector = data[ZCC_D64_DIRENT_DIR_SECTOR];
+    dirent->filetype = data[ZCC_D64_DIRENT_FILETYPE];
     dirent->track = data[ZCC_D64_DIRENT_TRACK];
     dirent->sector = data[ZCC_D64_DIRENT_SECTOR];
     memcpy(dirent->name, data + ZCC_D64_DIRENT_FILENAME, ZCC_CBMDOS_FILENAME_MAX);
-
+    dirent->ssb_track = data[ZCC_D64_DIRENT_SSB_TRACK];
+    dirent->ssb_sector = data[ZCC_D64_DIRENT_SSB_SECTOR];
+    dirent->rel_length = data[ZCC_D64_DIRENT_REL_LENGTH];
+    memcpy(dirent->geos, data + ZCC_D64_DIRENT_GEOS, ZCC_D64_DIRENT_GEOS_SIZE);
+    dirent->blocks = (uint8_t)(data[ZCC_D64_DIRENT_BLOCKS_LSB]
+            + 256 * data[ZCC_D64_DIRENT_BLOCKS_MSB]);
     return true;
 }
+
+
+/** \brief  Initialize d64 dirent iter
+ *
+ * \param[in,out]   iter    d64 dirent iter
+ * \param[in]       d64     d64 image
+ *
+ * \return  true if at least on dirent was found, false otherwise
+ */
+bool zcc_d64_dirent_iter_init(zcc_d64_dirent_iter_t *iter, zcc_d64_t *d64)
+{
+    uint8_t buffer[ZCC_D64_BLOCK_SIZE_RAW];
+    iter->d64 = d64;
+    iter->sector = ZCC_D64_DIR_SECTOR;
+    iter->offset = 0;
+    iter->index = 0;
+
+    /* read raw initial block at (18,1) */
+    zcc_d64_block_read(d64, buffer, ZCC_D64_DIR_TRACK, ZCC_D64_DIR_SECTOR);
+    /* convert to dirent */
+    zcc_d64_dirent_read(&(iter->dirent), buffer);
+
+    return (bool)(iter->dirent.name[0]);
+}
+
+
+bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter)
+{
+    uint8_t buffer[ZCC_D64_BLOCK_SIZE_RAW];
+    if (iter->index == ZCC_D64_DIRENT_MAX - 1
+            || iter->dirent.name[0] == 0) {
+        return false;
+    }
+
+    /* move to next entry */
+    if (iter->offset < 0xe0) {
+        /* move inside sector */
+        iter->offset += ZCC_D64_DIRENT_SIZE;
+    } else {
+        /* check for next dir sector */
+        long offset;
+        uint8_t *data;
+        int next_sector;
+
+
+        printf("Checking for next dir sector\n");
+        offset = zcc_d64_block_offset(ZCC_D64_DIR_TRACK, iter->sector);
+        if (offset < 0) {
+            return false;
+        }
+        data = iter->d64->data + offset;
+        next_sector = data[1];
+        printf("Next block = (18,%d)\n", next_sector);
+        if (next_sector == 255) {
+            return false;
+        }
+        iter->offset = 0;
+        iter->sector = next_sector;
+    }
+    /* read raw initial block at (18,1) */
+    printf("Reading dirent from (18,%d), offset %02x\n", iter->sector, iter->offset);
+    zcc_d64_block_read(iter->d64, buffer, ZCC_D64_DIR_TRACK, iter->sector);
+    /* convert to dirent */
+    zcc_d64_dirent_read(&(iter->dirent), buffer + iter->offset);
+    iter->index++;
+    return (bool)(iter->dirent.name[0]);
+}
+
+
+/** \brief  Dump info on dirent \a iter on stdout
+ *
+ * \param[in]   iter    D64 dirent iter
+ */
+void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter)
+{
+    printf("dir sector = %d, in-sector offset: %02x\n",
+            iter->sector, (unsigned int)(iter->offset));
+}
+
 
 
 /** \brief  Initialize D64 dir object
@@ -377,9 +472,10 @@ void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t *d64)
     dir->d64 = d64;
     memset(dir->diskname, 0, ZCC_D64_DISKNAME_MAXLEN);
     memset(dir->diskid, 0, ZCC_D64_DISKID_MAXLEN);
-    for (int i = 0; i < 144; i++) {
+    for (int i = 0; i < ZCC_D64_DIRENT_MAX; i++) {
         zcc_d64_dirent_init(&(dir->entries[i]));
     }
+    dir->entry_count = 0;
 }
 
 
@@ -388,23 +484,60 @@ bool zcc_d64_dir_read(zcc_d64_dir_t *dir)
 {
     long offset;
     uint8_t *bam;
+    zcc_d64_dirent_iter_t iter;
 
+    /* get pointer to BAM */
     offset = zcc_d64_block_offset(18, 0);
     bam = dir->d64->data + offset;
 
-
     /* get disk name */
-    memcpy(dir->diskname, bam + ZCC_D64_BAM_DISKNAME, 16);
-    memcpy(dir->diskid, bam + ZCC_D64_BAM_DISKID, 5);
+    memcpy(dir->diskname, bam + ZCC_D64_BAM_DISKNAME, ZCC_D64_DISKNAME_MAXLEN);
+    /* get disk id */
+    memcpy(dir->diskid, bam + ZCC_D64_BAM_DISKID, ZCC_D64_DISKID_MAXLEN);
+
+
+    /* initialize dirent iter */
+    if (!zcc_d64_dirent_iter_init(&iter, dir->d64)) {
+        printf("NO dir entries.\n");
+        return true;
+    }
+
+
+    do {
+        /* copy dirent */
+        dir->entries[dir->entry_count++] = iter.dirent;
+    } while (zcc_d64_dirent_iter_next(&iter));
 
     return true;
 }
 
 
+/** \brief  Dump directory \a dir on stdout
+ *
+ * \param[in]   dir D64 directory
+ */
 void zcc_d64_dir_dump(zcc_d64_dir_t *dir)
 {
     char diskname_buf[ZCC_D64_DISKNAME_MAXLEN + 1];
     char diskid_buf[ZCC_D64_DISKID_MAXLEN + 1];
 
-    printf("0 \"%16s\" %5s\n", dir->diskname, dir->diskid);
+    zcc_pet_to_asc_str(diskname_buf, dir->diskname, ZCC_D64_DISKNAME_MAXLEN);
+    zcc_pet_to_asc_str(diskid_buf, dir->diskname, ZCC_D64_DISKID_MAXLEN);
+
+    printf("0 \"%16s\" %5s\n", diskname_buf, diskid_buf);
+
+    for (int i = 0; i < dir->entry_count; i++) {
+        zcc_d64_dirent_t *dirent = &(dir->entries[i]);
+        char filename[ZCC_CBMDOS_FILENAME_LEN + 1];
+
+        zcc_pet_to_asc_str(filename, dirent->name, ZCC_CBMDOS_FILENAME_LEN);
+
+        printf("%-5d \"%s\" %c%s%c\n",
+                (int)(dirent->blocks),
+                filename,
+                dirent->filetype & ZCC_CBMDOS_CLOSED_MASK ? ' ' : '*',
+                zcc_cbmdos_filetype_str(dirent->filetype),
+                dirent->filetype & ZCC_CBMDOS_LOCKED_MASK ? '<' : ' ');
+
+    }
 }
