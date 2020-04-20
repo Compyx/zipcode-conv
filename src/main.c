@@ -103,9 +103,10 @@ static void test_zipdisk(void)
 }
 #endif
 
+static int opt_verbose = 0;
 static int opt_zipdisk_info = 0;
 static int opt_zipdisk_unzip = 0;
-static int opt_verbose = 0;
+static int opt_d64_dir = 0;
 
 
 
@@ -191,6 +192,39 @@ static bool cmd_zipdisk_unzip(strlist_t *args)
 }
 
 
+static bool cmd_d64_dir(strlist_t *args)
+{
+    char *path = strlist_get(args, 0);
+    zcc_d64_t d64;
+    zcc_d64_dir_t dir;
+
+    printf("Showing dir of '%s'\n", path);
+    zcc_d64_init(&d64);
+    printf("Loading file .. ");
+    if (zcc_d64_read(&d64, strlist_get(args, 0), 0)) {
+        printf("OK.\n");
+        printf("Initializing d64_dir object.. ");
+        zcc_d64_dir_init(&dir, &d64);
+        printf("Reading directory .. ");
+        if (zcc_d64_dir_read(&dir)) {
+            printf("OK.\n");
+        } else {
+            return false;
+        }
+        zcc_d64_dir_dump(&dir);
+
+        zcc_d64_free(&d64);
+
+    } else {
+        printf("failed.,\n");
+        return false;
+    }
+
+    return true;
+}
+
+
+
 static const cmdline_option_t main_cmdline_options[] = {
     { 0, "zipdisk-info", NULL, CMDLINE_TYPE_BOOL,
         &opt_zipdisk_info, NULL, "show info on zipdisk archive" },
@@ -198,6 +232,8 @@ static const cmdline_option_t main_cmdline_options[] = {
         &opt_verbose, 0, "enable verbose output" },
     { 0, "zipdisk-unzip", NULL, CMDLINE_TYPE_BOOL,
         &opt_zipdisk_unzip, NULL, "unpack" },
+    { 0, "d64-dir", NULL, CMDLINE_TYPE_BOOL,
+        &opt_d64_dir, NULL, "display D64 directory" },
 
     CMDLINE_OPTION_TERMINATOR
 };
@@ -208,6 +244,8 @@ static bool handle_commands(strlist_t *args)
         return cmd_zipdisk_info(args);
     } else if (opt_zipdisk_unzip) {
         return cmd_zipdisk_unzip(args);
+    } else if (opt_d64_dir) {
+        return cmd_d64_dir(args);
     }
 
     return true;

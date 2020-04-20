@@ -344,6 +344,10 @@ bool zcc_d64_write(zcc_d64_t *d64, const char *path)
 }
 
 
+/** \brief  Initialize d64 dirent
+ *
+ * \param[out]  dirent  D64 director entry object
+ */
 void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent)
 {
     dirent->d64 = NULL;
@@ -362,5 +366,45 @@ bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
     dirent->sector = data[ZCC_D64_DIRENT_SECTOR];
     memcpy(dirent->name, data + ZCC_D64_DIRENT_FILENAME, ZCC_CBMDOS_FILENAME_MAX);
 
+    return true;
+}
 
+
+/** \brief  Initialize D64 dir object
+ */
+void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t *d64)
+{
+    dir->d64 = d64;
+    memset(dir->diskname, 0, ZCC_D64_DISKNAME_MAXLEN);
+    memset(dir->diskid, 0, ZCC_D64_DISKID_MAXLEN);
+    for (int i = 0; i < 144; i++) {
+        zcc_d64_dirent_init(&(dir->entries[i]));
+    }
+}
+
+
+
+bool zcc_d64_dir_read(zcc_d64_dir_t *dir)
+{
+    long offset;
+    uint8_t *bam;
+
+    offset = zcc_d64_block_offset(18, 0);
+    bam = dir->d64->data + offset;
+
+
+    /* get disk name */
+    memcpy(dir->diskname, bam + ZCC_D64_BAM_DISKNAME, 16);
+    memcpy(dir->diskid, bam + ZCC_D64_BAM_DISKID, 5);
+
+    return true;
+}
+
+
+void zcc_d64_dir_dump(zcc_d64_dir_t *dir)
+{
+    char diskname_buf[ZCC_D64_DISKNAME_MAXLEN + 1];
+    char diskid_buf[ZCC_D64_DISKID_MAXLEN + 1];
+
+    printf("0 \"%16s\" %5s\n", dir->diskname, dir->diskid);
 }

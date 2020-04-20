@@ -147,15 +147,20 @@ typedef struct zcc_d64_dirent_s {
 #define ZCC_D64_DISKID_MAXLEN      5
 
 
+#define ZCC_D64_BAM_DISKNAME    0x90
+#define ZCC_D64_BAM_DISKID      0xa5
+
+
 /** \brief  D64 dir
  */
 typedef struct zcc_d64_dir_s {
-    zcc_d64_t *d64;
-    uint8_t diskname[ZCC_D64_DISKNAME_MAXLEN];
-    uint8_t diskid[ZCC_D64_DISKID_MAXLEN];
-    zcc_d64_dirent_t entries[144];
-    int entry_count;
+    zcc_d64_t *         d64;
+    uint8_t             diskname[ZCC_D64_DISKNAME_MAXLEN];
+    uint8_t             diskid[ZCC_D64_DISKID_MAXLEN];
+    zcc_d64_dirent_t    entries[144];
+    int                 entry_count;
 } zcc_d64_dir_t;
+
 
 long zcc_d64_block_offset(int track, int sector);
 long zcc_d64_track_offset(int track);
@@ -178,6 +183,13 @@ bool zcc_d64_block_write(zcc_d64_t *d64,
 
 
 void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent);
+
+bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data);
+
+
+void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t * d64);
+bool zcc_d64_dir_read(zcc_d64_dir_t *dir);
+void zcc_d64_dir_dump(zcc_d64_dir_t *dir);
 
 #endif
 
