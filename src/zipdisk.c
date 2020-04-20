@@ -462,7 +462,13 @@ bool zcc_zipdisk_unzip(zcc_zipdisk_t *zip, const char *path)
 }
 
 
-
+/** \brief  Dump information on zipdisk archive \a path
+ *
+ * \param[in]   path    path to zipdisk archive file
+ * \param[in]   verbose be verbose
+ *
+ * \return  bool
+ */
 bool zcc_zipdisk_show_info(const char *path, bool verbose)
 {
     zcc_zipdisk_t zip;

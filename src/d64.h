@@ -72,9 +72,12 @@
  */
 #define ZCC_D64_BLOCK_SIZE_RAW  256
 
-
+/** \brief  Size of a raw directory entry
+ */
 #define ZCC_D64_DIRENT_SIZE     0x20
 
+/** \brief  Size of extra GEOS data in a raw directory entry
+ */
 #define ZCC_D64_DIRENT_GEOS_SIZE    0x06
 
 
@@ -82,24 +85,75 @@
  */
 #define ZCC_D64_BLOCK_SIZE_DATA 254
 
+/*
+ * Directory entry offsets
+ */
+
+/** \brief  Track number of next dir block
+ *
+ * Ignored by 1541 ROM
+ */
 #define ZCC_D64_DIRENT_DIR_TRACK    0x00
+
+/** \brief  Sector number of next dir block
+ */
 #define ZCC_D64_DIRENT_DIR_SECTOR   0x01
+
+/** \brief  Filetype and locked/closed bits
+ */
 #define ZCC_D64_DIRENT_FILETYPE     0x02
+
+/** \brief  Track number of first block of file
+ */
 #define ZCC_D64_DIRENT_TRACK        0x03
+
+/** \brief  Sector number of first block of file
+ */
 #define ZCC_D64_DIRENT_SECTOR       0x04
+
+/** \brief  Filename in PETSCII
+ */
 #define ZCC_D64_DIRENT_FILENAME     0x05
+
+/** \brief  Track number of first SSB
+ */
 #define ZCC_D64_DIRENT_SSB_TRACK    0x15
+
+/** \brief  Sector number of first SSB
+ */
 #define ZCC_D64_DIRENT_SSB_SECTOR   0x16
+
+/** \brief  Record size for REL files
+ */
 #define ZCC_D64_DIRENT_REL_LENGTH   0x17
+
+/** \brief  GEOS data
+ */
 #define ZCC_D64_DIRENT_GEOS         0x18
+
+/** \brief  LSB of the file size in blocks
+ */
 #define ZCC_D64_DIRENT_BLOCKS_LSB   0x1e
+
+/** \brief  MSB of the file size in blocks
+ */
 #define ZCC_D64_DIRENT_BLOCKS_MSB   0x1f
 
 
+/** \brief  Track number of the BAM
+ */
 #define ZCC_D64_BAM_TRACK   18
+
+/** \brief  Sector number of the BAM
+ */
 #define ZCC_D64_BAM_SECTOR   0
 
+/** \brief  Track number of the first directory block
+ */
 #define ZCC_D64_DIR_TRACK   18
+
+/** \brief  Sector number of the first directory block
+ */
 #define ZCC_D64_DIR_SECTOR   1
 
 
@@ -141,38 +195,52 @@ typedef struct zcc_d64_s {
 /** \brief  D64 dirent
  */
 typedef struct zcc_d64_dirent_s {
-    zcc_d64_t * d64;
-    uint8_t     name[ZCC_CBMDOS_FILENAME_MAX];
-    uint8_t     geos[ZCC_D64_DIRENT_GEOS_SIZE];
-    uint16_t    blocks;
-    uint8_t     filetype;
-    uint8_t     dir_track;
-    uint8_t     dir_sector;
-    uint8_t     track;
-    uint8_t     sector;
-    uint8_t     ssb_track;
-    uint8_t     ssb_sector;
-    uint8_t     rel_length;
+    zcc_d64_t * d64;    /**< D64 reference */
+    uint8_t     name[ZCC_CBMDOS_FILENAME_MAX];  /**< PETSCII filename */
+    uint8_t     geos[ZCC_D64_DIRENT_GEOS_SIZE]; /**< GEOS data */
+    uint16_t    blocks;     /**< size of the file in blocks */
+    uint8_t     filetype;   /**< filetype and locked/closed flags */
+    uint8_t     dir_track;  /**< track number of next dir block */
+    uint8_t     dir_sector; /**< sector number of next dir block */
+    uint8_t     track;      /**< track number of first block of file */
+    uint8_t     sector;     /**< sector number of first block of file */
+    uint8_t     ssb_track;  /**< track number of first side-sector block */
+    uint8_t     ssb_sector; /**< sector number of first side-sector block */
+    uint8_t     rel_length; /**< size of relative file record */
 } zcc_d64_dirent_t;
 
 
+/** \brief  D64 dirent iterator
+ */
 typedef struct zcc_d64_dirent_iter_s {
-    zcc_d64_t *d64; /**< reference to D64 */
-    zcc_d64_dirent_t dirent;
-    int sector;     /**< sector number in track 18 */
-    int offset;     /**< offset in current dir sector */
-    int index;      /**< dirent index in d64 */
+    zcc_d64_t *d64;             /**< reference to D64 */
+    zcc_d64_dirent_t dirent;    /**< directory entry */
+    int sector;                 /**< sector number in track 18 */
+    int offset;                 /**< offset in current dir sector */
+    int index;                  /**< dirent index in d64 */
 } zcc_d64_dirent_iter_t;
 
 
-
+/** \brief  Size of a D64 disk name in PETSCII
+ */
 #define ZCC_D64_DISKNAME_MAXLEN    16
+
+/** \brief  Size of a D64 disk ID in PETSCII
+ *
+ * This includes the DOS type at $a5-$a6 and the inverted space at $a4
+ */
 #define ZCC_D64_DISKID_MAXLEN      5
 
-
+/** \brief  Offset in BAM of the disk name
+ */
 #define ZCC_D64_BAM_DISKNAME    0x90
+
+/** \brief  Offset in BAM of the disk ID
+ */
 #define ZCC_D64_BAM_DISKID      0xa5
 
+/** \brief  Offset in BAM of the BAM entries for tracks 1-35
+ */
 #define ZCC_D64_BAM_TRACKS      0x04
 
 /** \brief  Size of a BAM entry for a track
@@ -188,18 +256,21 @@ typedef struct zcc_d64_dirent_iter_s {
 #define ZCC_D64_BAMENT_BITMAP   0x01
 
 
-
+/** \brief  Maximum number of directory entries for a 1541
+ *
+ * This is hardcoded in the ROM
+ */
 #define ZCC_D64_DIRENT_MAX  144
 
 
-/** \brief  D64 dir
+/** \brief  D64 directory object
  */
 typedef struct zcc_d64_dir_s {
-    zcc_d64_t *         d64;
-    uint8_t             diskname[ZCC_D64_DISKNAME_MAXLEN];
-    uint8_t             diskid[ZCC_D64_DISKID_MAXLEN];
-    zcc_d64_dirent_t    entries[ZCC_D64_DIRENT_MAX];
-    int                 entry_count;
+    zcc_d64_t *d64;    /**< D64 reference */
+    uint8_t diskname[ZCC_D64_DISKNAME_MAXLEN];  /**< PETSCII disk name */
+    uint8_t diskid[ZCC_D64_DISKID_MAXLEN];  /**< PETSCII disk ID + DOS type */
+    zcc_d64_dirent_t entries[ZCC_D64_DIRENT_MAX];   /**< directory entries */
+    int entry_count;    /**< number of directory entries */
 } zcc_d64_dir_t;
 
 
@@ -230,8 +301,10 @@ void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data);
 
 bool zcc_d64_dirent_iter_init(zcc_d64_dirent_iter_t *iter, zcc_d64_t *d64);
 bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter);
+#if 0
 void zcc_d64_dirent_iter_read_dirent(zcc_d64_dirent_iter_t *iter,
                                      zcc_d64_dirent_t *dirent);
+#endif
 void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter);
 
 

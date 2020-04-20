@@ -103,9 +103,20 @@ static void test_zipdisk(void)
 }
 #endif
 
+/** \brief  Enable verbose mode for commands
+ */
 static int opt_verbose = 0;
+
+/** \brief  Display info on zipdisk archive
+ */
 static int opt_zipdisk_info = 0;
+
+/** \brief  Convert zipdisk archive to D64
+ */
 static int opt_zipdisk_unzip = 0;
+
+/** \brief  Dump directory listing of D64 file
+ */
 static int opt_d64_dir = 0;
 
 
@@ -118,6 +129,7 @@ static int opt_d64_dir = 0;
 
 /** \brief  Show brief information on a zipdisk archive
  *
+ * \param[in]   args    argument list
  * \return bool
  */
 static bool cmd_zipdisk_info(strlist_t *args)
@@ -132,6 +144,12 @@ static bool cmd_zipdisk_info(strlist_t *args)
 }
 
 
+/** \brief  Convert zipdisk archive to D64
+ *
+ * \param[in]   args    command arguments
+ *
+ * \return  bool
+ */
 static bool cmd_zipdisk_unzip(strlist_t *args)
 {
     char *infile = strlist_get(args, 0);
@@ -192,6 +210,12 @@ static bool cmd_zipdisk_unzip(strlist_t *args)
 }
 
 
+/** \brief  List directory of a D64 image
+ *
+ * \param[in]   args    command argument list
+ *
+ * \return  bool
+ */
 static bool cmd_d64_dir(strlist_t *args)
 {
     char *path = strlist_get(args, 0);
@@ -224,7 +248,8 @@ static bool cmd_d64_dir(strlist_t *args)
 }
 
 
-
+/** \brief  List of command line options
+ */
 static const cmdline_option_t main_cmdline_options[] = {
     { 0, "zipdisk-info", NULL, CMDLINE_TYPE_BOOL,
         &opt_zipdisk_info, NULL, "show info on zipdisk archive" },
@@ -238,6 +263,14 @@ static const cmdline_option_t main_cmdline_options[] = {
     CMDLINE_OPTION_TERMINATOR
 };
 
+
+
+/** \brief  Try to make sense of all the options and arguments
+ *
+ * \param[in]   args    argument list
+ *
+ * \return  bool
+ */
 static bool handle_commands(strlist_t *args)
 {
     if (opt_zipdisk_info) {
@@ -254,6 +287,9 @@ static bool handle_commands(strlist_t *args)
 
 
 /** \brief  Command line handler of tool
+ *
+ * \param[in]   argc    argument count
+ * \param[in]   argv    argument vector
  *
  * \return  EXIT_SUCCESS or EXIT_FAILURE
  */

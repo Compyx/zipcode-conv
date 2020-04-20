@@ -464,10 +464,10 @@ void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
 }
 
 
-/** \brief  Initialize d64 dirent iter
+/** \brief  Initialize D64 directory entry iterator
  *
- * \param[in,out]   iter    d64 dirent iter
- * \param[in]       d64     d64 image
+ * \param[in,out]   iter    D64 directory entry iterator
+ * \param[in]       d64     D64 image
  *
  * \return  true if at least on dirent was found, false otherwise
  */
@@ -488,6 +488,12 @@ bool zcc_d64_dirent_iter_init(zcc_d64_dirent_iter_t *iter, zcc_d64_t *d64)
 }
 
 
+/** \brief  Move D64 directory entry iterator to the next entry
+ *
+ * \param[in,out]   iter    D64 directory entry iterator
+ *
+ * \return  TRUE if a next entry was found, FALSE when end-of-dir
+ */
 bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter)
 {
     uint8_t buffer[ZCC_D64_BLOCK_SIZE_RAW];
@@ -522,7 +528,8 @@ bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter)
         iter->sector = next_sector;
     }
     /* read raw initial block at (18,1) */
-    zcc_debug("Reading dirent from (18,%d), offset %02x\n", iter->sector, iter->offset);
+    zcc_debug("Reading dirent from (18,%d), offset %02x\n",
+            iter->sector, iter->offset);
     zcc_d64_block_read(iter->d64, buffer, ZCC_D64_DIR_TRACK, iter->sector);
     /* convert to dirent */
     zcc_d64_dirent_read(&(iter->dirent), buffer + iter->offset);
@@ -543,7 +550,10 @@ void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter)
 
 
 
-/** \brief  Initialize D64 dir object
+/** \brief  Initialize D64 directory object
+ *
+ * \param[out]  dir     D64 directory
+ * \param[in]   d64     D64 image providing the directory
  */
 void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t *d64)
 {

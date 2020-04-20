@@ -187,7 +187,7 @@ int zcc_popcount_byte(uint8_t b)
     int c = 0;
 
     while (b) {
-        b &= (b - 1);
+        b &= (uint8_t)(b - 1U);
         c++;
     }
     return c;

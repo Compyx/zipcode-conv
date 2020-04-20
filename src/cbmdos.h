@@ -48,8 +48,12 @@ typedef enum zcc_cbmdos_filetype_e {
  */
 #define ZCC_CBMDOS_FILETYPE_MASK    0x07
 
+/** \brief  Bitmask to filter out the locked state of a filetype byte
+ */
 #define ZCC_CBMDOS_LOCKED_MASK      0x40
 
+/** \brief  Bitmask to filter out the closed state of a filetype byte
+ */
 #define ZCC_CBMDOS_CLOSED_MASK      0x80
 
 
