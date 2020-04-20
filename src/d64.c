@@ -32,6 +32,7 @@
 #include <stdbool.h>
 
 #include "cbmdos.h"
+#include "debug.h"
 #include "errors.h"
 #include "mem.h"
 #include "io.h"
@@ -269,10 +270,10 @@ bool zcc_d64_read(zcc_d64_t *d64, const char *path, zcc_d64_type_t type)
 
     /* Attempt to load image data */
     result = zcc_fread_alloc(&(d64->data), path);
-    printf("got %ld bytes\n", result);
+    zcc_debug("got %ld bytes\n", result);
     if (result != ZCC_D64_SIZE_CBMDOS && result != ZCC_D64_SIZE_EXTENDED) {
         /* Failed */
-        fprintf(stderr, "error: invalid image size\n");
+        zcc_debug("error: invalid image size\n");
         zcc_free(d64->data);
         d64->data = NULL;
         return false;
@@ -346,6 +347,69 @@ bool zcc_d64_write(zcc_d64_t *d64, const char *path)
 }
 
 
+/** \brief  Read BAM entry for \a track in \a d64 into \a bament
+ *
+ * Only works for 35-track images at the moment.
+ *
+ * \param[in]   d64     D64 image
+ * \param[out]  bament  storage for raw BAM entry (4 bytes)
+ * \param[in]   track   track number
+ *
+ * \return  TRUE on success
+ */
+bool zcc_d64_bament_read(const zcc_d64_t *d64, uint8_t *bament, int track)
+{
+    uint8_t *bam;
+    long offset;
+
+    if (track < ZCC_D64_TRACK_MIN || track > ZCC_D64_TRACK_MAX) {
+        return false;
+    }
+
+    offset = zcc_d64_block_offset(ZCC_D64_BAM_TRACK, ZCC_D64_BAM_SECTOR);
+    bam = d64->data + offset;
+
+    memcpy(bament,
+           bam + ZCC_D64_BAM_TRACKS + (track - 1) * ZCC_D64_BAMENT_SIZE,
+           ZCC_D64_BAMENT_SIZE);
+
+    return true;
+}
+
+
+/** \brief  Determine number of blocks free on \a d64
+ *
+ * \param[in]   d64     D64 image
+ *
+ * \return  blocks free
+ *
+ * \todo    Mask out unused bits for invalid sectors
+ */
+int zcc_d64_blocks_free(zcc_d64_t *d64)
+{
+    int blocks = 0;
+
+    for (int track = ZCC_D64_TRACK_MIN; track <= ZCC_D64_TRACK_MAX; track++) {
+        /* exclude track 18 */
+        if (track != ZCC_D64_DIR_TRACK) {
+            uint8_t bament[ZCC_D64_BAMENT_SIZE];
+            int popcount;
+
+            zcc_d64_bament_read(d64, bament, track);
+
+            popcount = zcc_popcount_byte(bament[ZCC_D64_BAMENT_BITMAP + 0])
+                     + zcc_popcount_byte(bament[ZCC_D64_BAMENT_BITMAP + 1])
+                     + zcc_popcount_byte(bament[ZCC_D64_BAMENT_BITMAP + 2]);
+#if 0
+            zcc_debug("popcount for track %d = %d\n", track, popcount);
+#endif
+            blocks += popcount;
+        }
+    }
+    return blocks;
+}
+
+
 /** \brief  Initialize d64 dirent
  *
  * \param[out]  dirent  D64 director entry object
@@ -367,22 +431,36 @@ void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent)
 }
 
 
-
-bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
+/** \brief  Read data into \a dirent from \a data
+ *
+ * \param[out]  dirent  D64 directory entry
+ * \param[in]   data    raw directory entry data
+ */
+void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
 {
+    /* $00 (useless) */
     dirent->dir_track = data[ZCC_D64_DIRENT_DIR_TRACK];
+    /* $01 */
     dirent->dir_sector = data[ZCC_D64_DIRENT_DIR_SECTOR];
+    /* $02 */
     dirent->filetype = data[ZCC_D64_DIRENT_FILETYPE];
+    /* $03 */
     dirent->track = data[ZCC_D64_DIRENT_TRACK];
+    /* $04 */
     dirent->sector = data[ZCC_D64_DIRENT_SECTOR];
+    /* $05-$14 */
     memcpy(dirent->name, data + ZCC_D64_DIRENT_FILENAME, ZCC_CBMDOS_FILENAME_MAX);
+    /* $15 */
     dirent->ssb_track = data[ZCC_D64_DIRENT_SSB_TRACK];
+    /* $16 */
     dirent->ssb_sector = data[ZCC_D64_DIRENT_SSB_SECTOR];
+    /* $17 */
     dirent->rel_length = data[ZCC_D64_DIRENT_REL_LENGTH];
+    /* $18-$1d */
     memcpy(dirent->geos, data + ZCC_D64_DIRENT_GEOS, ZCC_D64_DIRENT_GEOS_SIZE);
+    /* $1e-$1f */
     dirent->blocks = (uint8_t)(data[ZCC_D64_DIRENT_BLOCKS_LSB]
             + 256 * data[ZCC_D64_DIRENT_BLOCKS_MSB]);
-    return true;
 }
 
 
@@ -429,14 +507,14 @@ bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter)
         int next_sector;
 
 
-        printf("Checking for next dir sector\n");
+        zcc_debug("Checking for next dir sector\n");
         offset = zcc_d64_block_offset(ZCC_D64_DIR_TRACK, iter->sector);
         if (offset < 0) {
             return false;
         }
         data = iter->d64->data + offset;
         next_sector = data[1];
-        printf("Next block = (18,%d)\n", next_sector);
+        zcc_debug("Next block = (18,%d)\n", next_sector);
         if (next_sector == 255) {
             return false;
         }
@@ -444,7 +522,7 @@ bool zcc_d64_dirent_iter_next(zcc_d64_dirent_iter_t *iter)
         iter->sector = next_sector;
     }
     /* read raw initial block at (18,1) */
-    printf("Reading dirent from (18,%d), offset %02x\n", iter->sector, iter->offset);
+    zcc_debug("Reading dirent from (18,%d), offset %02x\n", iter->sector, iter->offset);
     zcc_d64_block_read(iter->d64, buffer, ZCC_D64_DIR_TRACK, iter->sector);
     /* convert to dirent */
     zcc_d64_dirent_read(&(iter->dirent), buffer + iter->offset);
@@ -479,7 +557,14 @@ void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t *d64)
 }
 
 
-
+/** \brief  Read directory into \a dir
+ *
+ * The \a dir should have been initialized with zcc_d64_dir_init() beforehand.
+ *
+ * \param[in,out]   dir D64 directoru
+ *
+ * \return  bool
+ */
 bool zcc_d64_dir_read(zcc_d64_dir_t *dir)
 {
     long offset;
@@ -498,11 +583,11 @@ bool zcc_d64_dir_read(zcc_d64_dir_t *dir)
 
     /* initialize dirent iter */
     if (!zcc_d64_dirent_iter_init(&iter, dir->d64)) {
-        printf("NO dir entries.\n");
+        zcc_debug("NO dir entries.\n");
         return true;
     }
 
-
+    /* iterate over entries */
     do {
         /* copy dirent */
         dir->entries[dir->entry_count++] = iter.dirent;
@@ -528,9 +613,9 @@ void zcc_d64_dir_dump(zcc_d64_dir_t *dir)
 
     for (int i = 0; i < dir->entry_count; i++) {
         zcc_d64_dirent_t *dirent = &(dir->entries[i]);
-        char filename[ZCC_CBMDOS_FILENAME_LEN + 1];
+        char filename[ZCC_CBMDOS_FILENAME_MAX + 1];
 
-        zcc_pet_to_asc_str(filename, dirent->name, ZCC_CBMDOS_FILENAME_LEN);
+        zcc_pet_to_asc_str(filename, dirent->name, ZCC_CBMDOS_FILENAME_MAX);
 
         printf("%-5d \"%s\" %c%s%c\n",
                 (int)(dirent->blocks),
@@ -538,6 +623,6 @@ void zcc_d64_dir_dump(zcc_d64_dir_t *dir)
                 dirent->filetype & ZCC_CBMDOS_CLOSED_MASK ? ' ' : '*',
                 zcc_cbmdos_filetype_str(dirent->filetype),
                 dirent->filetype & ZCC_CBMDOS_LOCKED_MASK ? '<' : ' ');
-
     }
+    printf("%d blocks free.\n", zcc_d64_blocks_free(dir->d64));
 }

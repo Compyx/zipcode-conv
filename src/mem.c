@@ -172,3 +172,24 @@ void zcc_hexdump(const uint8_t *src, size_t len, size_t voffset)
         voffset += 16;
     }
 }
+
+
+/** \brief  Count number of set bits in byte \a b
+ *
+ * Count bits the Brian Kernighan way.
+ *
+ * \param[in]   b   byte to process
+ *
+ * \return  number of set bits in \a b
+ */
+int zcc_popcount_byte(uint8_t b)
+{
+    int c = 0;
+
+    while (b) {
+        b &= (b - 1);
+        c++;
+    }
+    return c;
+}
+

@@ -31,6 +31,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "cbmdos.h"
+
 
 /** \brief  Size of a standard 35-track D64 image without error info
  */
@@ -136,9 +138,6 @@ typedef struct zcc_d64_s {
 } zcc_d64_t;
 
 
-#define ZCC_CBMDOS_FILENAME_MAX 16
-
-
 /** \brief  D64 dirent
  */
 typedef struct zcc_d64_dirent_s {
@@ -174,6 +173,22 @@ typedef struct zcc_d64_dirent_iter_s {
 #define ZCC_D64_BAM_DISKNAME    0x90
 #define ZCC_D64_BAM_DISKID      0xa5
 
+#define ZCC_D64_BAM_TRACKS      0x04
+
+/** \brief  Size of a BAM entry for a track
+ */
+#define ZCC_D64_BAMENT_SIZE     0x04
+
+/** \brief  Number of sectors free for a track in a BAM entry
+ */
+#define ZCC_D64_BAMENT_COUNT    0x00
+
+/** \brief  Bitmap of free sectors for a track in a BAM entry
+ */
+#define ZCC_D64_BAMENT_BITMAP   0x01
+
+
+
 #define ZCC_D64_DIRENT_MAX  144
 
 
@@ -207,9 +222,10 @@ bool zcc_d64_block_write(zcc_d64_t *d64,
                          int track, int sector);
 
 
+int zcc_d64_blocks_free(zcc_d64_t *d64);
 
 void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent);
-bool zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data);
+void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data);
 
 
 bool zcc_d64_dirent_iter_init(zcc_d64_dirent_iter_t *iter, zcc_d64_t *d64);
@@ -222,6 +238,9 @@ void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter);
 void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t * d64);
 bool zcc_d64_dir_read(zcc_d64_dir_t *dir);
 void zcc_d64_dir_dump(zcc_d64_dir_t *dir);
+
+
+bool zcc_d64_bament_read(const zcc_d64_t *d64, uint8_t *bament, int track);
 
 #endif
 

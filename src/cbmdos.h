@@ -30,7 +30,7 @@
 
 /** \brief  Maximum length of a CBM DOS filename in PETSCII
  */
-#define ZCC_CBMDOS_FILENAME_LEN 16
+#define ZCC_CBMDOS_FILENAME_MAX 16
 
 
 /** \brief  File type enumerator

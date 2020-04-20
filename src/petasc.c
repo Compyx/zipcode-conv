@@ -286,9 +286,9 @@ void zcc_asc_to_pet_str(uint8_t *pet, const char *asc, size_t n)
 void zcc_pet_filename_to_host(char *asc, const uint8_t *pet, const char *ext)
 {
     int lead = 0;
-    int trail = ZCC_CBMDOS_FILENAME_LEN - 1;
+    int trail = ZCC_CBMDOS_FILENAME_MAX - 1;
 
-    while (lead < ZCC_CBMDOS_FILENAME_LEN &&
+    while (lead < ZCC_CBMDOS_FILENAME_MAX &&
             (pet[lead] == 0x20 || pet[lead] == 0xa0)) {
         lead++;
     }
