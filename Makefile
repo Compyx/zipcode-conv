@@ -34,7 +34,8 @@ doc:
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(BASE_OBJS) $(PROG_OBJS) $(TEST_OBJS) main.o unit_tests.o
+	rm -f $(BIN_PROG) $(BIN_TEST)
 	rm -rfd $(DOCS)/html/*
 	rm -f *.html
 
@@ -46,10 +47,10 @@ install:
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BIN_PROG): main.o $(PROG_OBJS)
+$(BIN_PROG): main.o $(PROG_OBJS) $(BASE_OBJS)
 	$(LD) -o $@ $^
 
-$(BIN_TEST): unit_tests.o $(TEST_OBJS)
+$(BIN_TEST): unit_tests.o $(TEST_OBJS) $(BASE_OBJS)
 	$(LD) -o $@ $^
 
 
