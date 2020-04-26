@@ -19,10 +19,11 @@ BIN_TEST = unit_tests
 
 all: $(BIN_PROG) $(BIN_TEST)
 
-BASE_OBJS = cmdline.o cbmdos.o errors.o mem.o io.o strlist.o petasc.o
-PROG_OBJS = d64.o rle.o zipdisk.o $(BASE_OBJS)
+BASE_OBJS = cmdline.o cbmdos.o errors.o mem.o io.o strlist.o petasc.o d64.o \
+	    rle.o zipdisk.o
+PROG_OBJS = $(BASE_OBJS)
 TEST_OBJS = unit.o $(BASE_OBJS) \
-	    test_unittest.o
+	    test_unittest.o test_d64.o
 
 
 DOCS = doc/doxygen

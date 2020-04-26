@@ -233,7 +233,7 @@ bool unit_module_exec(unit_module_t *module)
         result = unit_module_test_exec(module, test);
 
         if (!result && !test->keep_going) {
-            printf("...... test failed and marked fatal, exiting.");
+            printf("...... test failed and marked fatal, exiting\n.");
             return false;
         }
     }

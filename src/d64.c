@@ -541,14 +541,6 @@ void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
             + 256 * data[ZCC_D64_DIRENT_BLOCKS_MSB]);
 
     /* get file size in bytes */
-
-    if (dirent->d64 == NULL) {
-        fprintf(stderr, "%s:%d: ERROR: D64 is NULL!\n",
-                __func__, __LINE__);
-        exit(1);
-    }
-
-
     if (zcc_d64_block_is_valid(dirent->d64, dirent->track, dirent->sector)) {
         zcc_debug("getting file size in bytes for (%d,%d):",
                 dirent->track, dirent->sector);
@@ -556,8 +548,6 @@ void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
         zcc_debug("file size = %ld", size);
         if (size >= 0) {
             dirent->size = (size_t)size;
-        } else {
-            zcc_perror(__func__);
         }
     }
 }
@@ -729,7 +719,6 @@ bool zcc_d64_block_iter_init(zcc_d64_block_iter_t *iter,
             return true;
         }
     }
-    zcc_debug("ERROR!");
     iter->valid = false;
     return false;
 }

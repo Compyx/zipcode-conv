@@ -17,6 +17,7 @@
  * test modules
  */
 #include "test_unittest.h"
+#include "test_d64.h"
 #if 0
 #include "test_mem.h"
 #include "test_io.h"
@@ -66,6 +67,7 @@ static void register_modules(void)
     printf("Registering modules...\n");
 
     unit_module_add(&unittest_module);
+    unit_module_add(&d64_module);
 #if 0
     unit_module_add(&mem_module);
     unit_module_add(&io_module);
