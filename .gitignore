@@ -1,5 +1,5 @@
 # temp files
-*.swp
+*.sw[op]
 *~
 
 # object files

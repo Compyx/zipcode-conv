@@ -121,25 +121,80 @@ long zcc_d64_track_offset(int track)
 }
 
 
+/** \brief  Get maximum sector number of \a track
+ *
+ * Get the maximum allow sector number for track.
+ *
+ * \param[in]   track   track number
+ *
+ * \return  maximum sector number (indexed by 0) for \a track or -1 on error
+ * \throw   ZCC_ERR_TRACK_RANGE
+ *
+ * \note    Assumes a 40-track image, so getting a proper error for 35-track
+ *          images requires an external check for the track count
+ */
+int zcc_d64_track_max_sector(int track)
+{
+    int zone = 0;
+
+    if (track < ZCC_D64_TRACK_MIN) {
+        zcc_errno = ZCC_ERR_TRACK_RANGE;
+        return -1;
+    }
+
+    while (zone < (int)(sizeof speedzones / sizeof speedzones[0])) {
+        if (track <= speedzones[zone].track_max) {
+            /* found zone */
+            return speedzones[zone].sectors;
+        }
+        zone++;
+    }
+    zcc_errno = ZCC_ERR_TRACK_RANGE;
+    return -1;
+}
+
+
+
+
 /** \brief  Check if \a track number is valid for \a d64
  *
  * \param[in]   d64     D64 handle
  * \param[in]   track   track number
  *
  * \return  true if \a track is valid for image \a d64
+ * \throw   ZCC_ERR_NULL
  * \throw   ZCC_ERR_TRACK_RANGE
  */
 bool zcc_d64_track_is_valid(const zcc_d64_t *d64, int track)
 {
-    /* check track number if 35-track image */
-    if (d64->type == ZCC_D64_TYPE_CBMDOS) {
-        if (track < ZCC_D64_TRACK_MIN || track > ZCC_D64_TRACK_MAX) {
-            zcc_errno = ZCC_ERR_TRACK_RANGE;
-            return false;
-        }
+    int track_max;
+
+    if (d64 == NULL) {
+        zcc_errno = ZCC_ERR_NULL;
+        return false;
     }
-    if (track < ZCC_D64_TRACK_MIN || track > ZCC_D64_TRACK_MAX_EXT) {
+
+    track_max = (d64->type == ZCC_D64_TYPE_CBMDOS ? 35 : 40);
+
+    if (track < ZCC_D64_TRACK_MIN || track > track_max) {
         zcc_errno = ZCC_ERR_TRACK_RANGE;
+        return false;
+    }
+    return true;
+}
+
+
+bool zcc_d64_block_is_valid(const zcc_d64_t *d64, int track, int sector)
+{
+    int sector_max;
+
+    if (!zcc_d64_track_is_valid(d64, track)) {
+        return false;   /* error codes already set */
+    }
+
+    sector_max = zcc_d64_track_max_sector(track);
+    if (sector < ZCC_D64_SECTOR_MIN || sector > sector_max) {
+        zcc_errno = ZCC_ERR_SECTOR_RANGE;
         return false;
     }
     return true;
@@ -413,13 +468,21 @@ int zcc_d64_blocks_free(zcc_d64_t *d64)
 /** \brief  Initialize d64 dirent
  *
  * \param[out]  dirent  D64 director entry object
+ * \param[in]   d64     D64 image
  */
-void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent)
+void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent, zcc_d64_t *d64)
 {
-    dirent->d64 = NULL;
+    if (d64 == NULL) {
+        fprintf(stderr,
+                "%s:%d: got NULL for D64!\n",
+                __func__, __LINE__);
+        exit(1);
+    }
+    dirent->d64 = d64;
     memset(dirent->name, 0, ZCC_D64_DISKNAME_MAXLEN);
     memset(dirent->geos, 0, ZCC_D64_DIRENT_GEOS_SIZE);
     dirent->filetype = 0;
+    dirent->size = 0;
     dirent->blocks = 0;
     dirent->track = 0;
     dirent->sector = 0;
@@ -438,6 +501,8 @@ void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent)
  */
 void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
 {
+    long size;
+
     /* $00 (useless) */
     dirent->dir_track = data[ZCC_D64_DIRENT_DIR_TRACK];
     /* $01 */
@@ -461,6 +526,27 @@ void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data)
     /* $1e-$1f */
     dirent->blocks = (uint8_t)(data[ZCC_D64_DIRENT_BLOCKS_LSB]
             + 256 * data[ZCC_D64_DIRENT_BLOCKS_MSB]);
+
+    /* get file size in bytes */
+
+    if (dirent->d64 == NULL) {
+        fprintf(stderr, "%s:%d: ERROR: D64 is NULL!\n",
+                __func__, __LINE__);
+        exit(1);
+    }
+
+
+    if (zcc_d64_block_is_valid(dirent->d64, dirent->track, dirent->sector)) {
+        zcc_debug("getting file size in bytes for (%d,%d):",
+                dirent->track, dirent->sector);
+        size = zcc_d64_file_size(dirent->d64, dirent->track, dirent->sector);
+        zcc_debug("file size = %ld", size);
+        if (size >= 0) {
+            dirent->size = (size_t)size;
+        } else {
+            zcc_perror(__func__);
+        }
+    }
 }
 
 
@@ -479,9 +565,17 @@ bool zcc_d64_dirent_iter_init(zcc_d64_dirent_iter_t *iter, zcc_d64_t *d64)
     iter->offset = 0;
     iter->index = 0;
 
+    if (d64 == NULL) {
+        exit(1);
+    }
+
     /* read raw initial block at (18,1) */
-    zcc_d64_block_read(d64, buffer, ZCC_D64_DIR_TRACK, ZCC_D64_DIR_SECTOR);
+    if (!zcc_d64_block_read(d64, buffer, ZCC_D64_DIR_TRACK, ZCC_D64_DIR_SECTOR)) {
+        zcc_perror(__func__);
+        exit(1);
+    }
     /* convert to dirent */
+    iter->dirent.d64 = d64;    /* !! */
     zcc_d64_dirent_read(&(iter->dirent), buffer);
 
     return (bool)(iter->dirent.name[0]);
@@ -549,6 +643,132 @@ void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter)
 }
 
 
+/*
+ * D64 block iterator methods
+ */
+#if 0
+
+/** \brief  Check if \a track and \a sector are valid for \a d64
+ *
+ * Checks \a track and \a sector against limits for \a d64.
+ *
+ * \param[in]   d64     D64 image
+ * \param[in]   track   track number
+ * \param[in]   sector  sector number
+ *
+ * \return  params are valid
+ * \throw   ZCC_ERR_NULL
+ * \throw   ZCC_ERR_TRACK_RANGE
+ * \throw   ZCC_ERR_SECTOR_RANGE
+ */
+bool zcc_d64_block_is_valid(const zcc_d64_t *d64, int track, int sector)
+{
+    int track_max;
+    int sector_max;
+
+    if (d64 == NULL) {
+        zcc_errno = ZCC_ERR_NULL;
+        return false;
+    }
+
+    /* get max track number for the current image */
+    track_max = (d64->type == ZCC_D64_TYPE_CBMDOS ? 35 : 40);
+
+    /* check track number */
+    if (track < ZCC_D64_TRACK_MIN || track > track_max) {
+        zcc_errno = ZCC_ERR_TRACK_RANGE;
+        return false;
+    }
+
+    /* check sector number */
+    sector_max = zcc_d64_track_max_sector(track);
+    if (sector < ZCC_D64_SECTOR_MIN || sector > sector_max) {
+        zcc_errno = ZCC_ERR_SECTOR_RANGE;
+        return false;
+    }
+
+    return true;
+}
+#endif
+
+
+/** \brief  Initialize D64 block iterator
+ *
+ * \param[out]  iter    D64 block iterator
+ * \param[in]   d64     D64 image
+ * \param[in]   track   track number
+ * \param[in]   sector  sector number
+ *
+ * \return  bool
+ */
+bool zcc_d64_block_iter_init(zcc_d64_block_iter_t *iter,
+                             zcc_d64_t *d64,
+                             int track, int sector)
+{
+    if (zcc_d64_block_is_valid(d64, track, sector)) {
+        zcc_debug("d64 okay");
+        iter->d64 = d64;
+        iter->track = track;
+        iter->sector = sector;
+        iter->size = 256;
+        if (zcc_d64_block_read(d64, iter->data, track, sector)) {
+            iter->valid = true;
+            return true;
+        }
+    }
+    zcc_debug("ERROR!");
+    iter->valid = false;
+    return false;
+}
+
+
+bool zcc_d64_block_iter_next(zcc_d64_block_iter_t *iter)
+{
+    int next_track = iter->data[0];
+    int next_sector = iter->data[1];
+
+    zcc_debug("block iter: current: (%d,%d), next: (%d,%d)",
+            iter->track, iter->sector, next_track, next_sector);
+
+    /* copy data */
+    if (next_track == 0) {
+        return false;
+    }
+    if (!zcc_d64_block_read(iter->d64, iter->data, next_track, next_sector)) {
+        return false;
+    }
+
+    iter->track = next_track;
+    iter->sector = next_sector;
+
+
+    return true;
+}
+
+
+long zcc_d64_file_size(zcc_d64_t *d64, int track, int sector)
+{
+    zcc_d64_block_iter_t iter;
+    long size = 0;
+
+    if (!zcc_d64_block_iter_init(&iter, d64, track, sector)) {
+        return -1;
+    }
+
+#if 0
+    do {
+        size += 254;
+    } while (zcc_d64_block_iter_next(&iter));
+#endif
+
+    while (zcc_d64_block_iter_next(&iter)) {
+        size += 254;
+    }
+    return size + iter.data[1] - 1;
+}
+
+
+
 
 /** \brief  Initialize D64 directory object
  *
@@ -557,11 +777,15 @@ void zcc_d64_dirent_iter_dump(const zcc_d64_dirent_iter_t *iter)
  */
 void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t *d64)
 {
+    if (d64 == NULL) {
+        fprintf(stderr, "%s:%d: Got NULL for D64!\n",
+                __func__, __LINE__);
+    }
     dir->d64 = d64;
     memset(dir->diskname, 0, ZCC_D64_DISKNAME_MAXLEN);
     memset(dir->diskid, 0, ZCC_D64_DISKID_MAXLEN);
     for (int i = 0; i < ZCC_D64_DIRENT_MAX; i++) {
-        zcc_d64_dirent_init(&(dir->entries[i]));
+        zcc_d64_dirent_init(&(dir->entries[i]), d64);
     }
     dir->entry_count = 0;
 }
@@ -571,7 +795,7 @@ void zcc_d64_dir_init(zcc_d64_dir_t *dir, zcc_d64_t *d64)
  *
  * The \a dir should have been initialized with zcc_d64_dir_init() beforehand.
  *
- * \param[in,out]   dir D64 directoru
+ * \param[in,out]   dir D64 directory
  *
  * \return  bool
  */

@@ -41,6 +41,7 @@ int zcc_errno;
  */
 static const char *err_msgs[] = {
     "OK",
+    "invalid use of NULL pointer",
     "I/O error",
     "track number out of range",
     "sector number out of range",

@@ -1,6 +1,6 @@
 # vim: set noet ts=8:
 VPATH=src:tests
-CC=gcc
+
 LD=$(CC)
 
 INSTALL_PREFIX=/usr/local

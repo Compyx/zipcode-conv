@@ -199,6 +199,7 @@ typedef struct zcc_d64_dirent_s {
     uint8_t     name[ZCC_CBMDOS_FILENAME_MAX];  /**< PETSCII filename */
     uint8_t     geos[ZCC_D64_DIRENT_GEOS_SIZE]; /**< GEOS data */
     uint16_t    blocks;     /**< size of the file in blocks */
+    size_t      size;       /**< size in bytes */
     uint8_t     filetype;   /**< filetype and locked/closed flags */
     uint8_t     dir_track;  /**< track number of next dir block */
     uint8_t     dir_sector; /**< sector number of next dir block */
@@ -274,6 +275,21 @@ typedef struct zcc_d64_dir_s {
 } zcc_d64_dir_t;
 
 
+/** \brief  D64 block iterator object
+ *
+ * A block is a raw (256 bytes) sector in a D64 image
+ */
+typedef struct zcc_d64_block_iter_s {
+    zcc_d64_t *d64;                         /**< D64 image */
+    uint8_t data[ZCC_D64_BLOCK_SIZE_RAW];   /**< current block data */
+    size_t size;                            /**< current block data size */
+    int track;                              /**< current block track number */
+    int sector;                             /**< current block sector number */
+    bool valid;                             /**< iterator is valid */
+} zcc_d64_block_iter_t;
+
+
+
 long zcc_d64_block_offset(int track, int sector);
 long zcc_d64_track_offset(int track);
 bool zcc_d64_track_is_valid(const zcc_d64_t *d64, int track);
@@ -295,7 +311,7 @@ bool zcc_d64_block_write(zcc_d64_t *d64,
 
 int zcc_d64_blocks_free(zcc_d64_t *d64);
 
-void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent);
+void zcc_d64_dirent_init(zcc_d64_dirent_t *dirent, zcc_d64_t *d64);
 void zcc_d64_dirent_read(zcc_d64_dirent_t *dirent, const uint8_t *data);
 
 
@@ -314,6 +330,19 @@ void zcc_d64_dir_dump(zcc_d64_dir_t *dir);
 
 
 bool zcc_d64_bament_read(const zcc_d64_t *d64, uint8_t *bament, int track);
+
+
+int zcc_d64_track_max_sector(int track);
+
+bool zcc_d64_block_is_valid(const zcc_d64_t *d64, int track, int sector);
+
+bool zcc_d64_block_iter_init(zcc_d64_block_iter_t *iter,
+                             zcc_d64_t *d64,
+                             int track, int sector);
+
+bool zcc_d64_block_iter_next(zcc_d64_block_iter_t *iter);
+
+long zcc_d64_file_size(zcc_d64_t *d64, int track, int sector);
 
 #endif
 
