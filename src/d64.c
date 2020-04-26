@@ -184,6 +184,17 @@ bool zcc_d64_track_is_valid(const zcc_d64_t *d64, int track)
 }
 
 
+/** \brief  Determine if (\a track, \a sector) is a valid block for \a d64
+ *
+ * \param[in]   d64     D64 image
+ * \param[in]   track   track number
+ * \param[in]   sector  sector number
+ *
+ * \return  boolean
+ * \throw   ZCC_ERR_NULL
+ * \throw   ZCC_ERR_TRACK_RANGE
+ * \throw   ZCC_ERR_SECTOR_RANGE
+ */
 bool zcc_d64_block_is_valid(const zcc_d64_t *d64, int track, int sector)
 {
     int sector_max;
@@ -724,6 +735,14 @@ bool zcc_d64_block_iter_init(zcc_d64_block_iter_t *iter,
 }
 
 
+/** \brief  Move block iterator to the next block
+ *
+ * \param[in,out]       iter    block iterator
+ *
+ * \return  true if next block is valid
+ *
+ * \note    Check zcc_errno for unexpected errors if this returns false
+ */
 bool zcc_d64_block_iter_next(zcc_d64_block_iter_t *iter)
 {
     int next_track = iter->data[ZCC_D64_BLOCK_TRACK];
@@ -742,12 +761,20 @@ bool zcc_d64_block_iter_next(zcc_d64_block_iter_t *iter)
 
     iter->track = next_track;
     iter->sector = next_sector;
-
-
     return true;
 }
 
 
+/** \brief  Determine size of file starting at (\a track, \a sector) in \a d64
+ *
+ * \param[in]   d64     D64 image
+ * \param[in]   track   track number of first block of file
+ * \param[in]   sector  sector number of first block of file
+ *
+ * \return  file size or -1 on error
+ *
+ * \todo    document error codes this could set.
+ */
 long zcc_d64_file_size(zcc_d64_t *d64, int track, int sector)
 {
     zcc_d64_block_iter_t iter;
@@ -756,12 +783,6 @@ long zcc_d64_file_size(zcc_d64_t *d64, int track, int sector)
     if (!zcc_d64_block_iter_init(&iter, d64, track, sector)) {
         return -1;
     }
-
-#if 0
-    do {
-        size += 254;
-    } while (zcc_d64_block_iter_next(&iter));
-#endif
 
     while (zcc_d64_block_iter_next(&iter)) {
         size += ZCC_D64_BLOCK_SIZE_DATA;
