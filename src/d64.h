@@ -66,12 +66,6 @@
  */
 #define ZCC_D64_SECTOR_MAX      20
 
-/** \brief  Size of a raw block (sector)
- *
- * This includes the 2-byte pointer to the next block (track,sector)
- */
-#define ZCC_D64_BLOCK_SIZE_RAW  256
-
 /** \brief  Size of a raw directory entry
  */
 #define ZCC_D64_DIRENT_SIZE     0x20
@@ -81,9 +75,29 @@
 #define ZCC_D64_DIRENT_GEOS_SIZE    0x06
 
 
+/** \brief  Size of a raw block (sector)
+ *
+ * This includes the 2-byte pointer to the next block (track,sector)
+ */
+#define ZCC_D64_BLOCK_SIZE_RAW  256
+
 /** \brief  Size of the data section of a block
  */
 #define ZCC_D64_BLOCK_SIZE_DATA 254
+
+/** \brief  Offset in a raw block of the next track
+ */
+#define ZCC_D64_BLOCK_TRACK 0
+
+/** \brief  Offset in a raw block of the next sector
+ */
+#define ZCC_D64_BLOCK_SECTOR 1
+
+/** \brief  Offset in a raw block of the actual data
+ */
+#define ZCC_D64_BLOCK_DATA 2
+
+
 
 /*
  * Directory entry offsets
@@ -138,6 +152,11 @@
 /** \brief  MSB of the file size in blocks
  */
 #define ZCC_D64_DIRENT_BLOCKS_MSB   0x1f
+
+
+/** \brief  Offset in bytes in a D64 of the BAM
+ */
+#define ZCC_D64_BAM_OFFSET  0x16500
 
 
 /** \brief  Track number of the BAM

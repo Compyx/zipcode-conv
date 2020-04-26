@@ -364,7 +364,9 @@ void zcc_d64_dump_info(const zcc_d64_t *d64)
  */
 void zcc_d64_dump_bam(const zcc_d64_t *d64)
 {
-    zcc_hexdump(d64->data + 0x16500, 256, 0x16500);
+    zcc_hexdump(d64->data + ZCC_D64_BAM_OFFSET,
+            ZCC_D64_BLOCK_SIZE_RAW,
+            ZCC_D64_BAM_OFFSET);
 }
 
 
@@ -710,7 +712,7 @@ bool zcc_d64_block_iter_init(zcc_d64_block_iter_t *iter,
         iter->d64 = d64;
         iter->track = track;
         iter->sector = sector;
-        iter->size = 256;
+        iter->size = ZCC_D64_BLOCK_SIZE_RAW;
         if (zcc_d64_block_read(d64, iter->data, track, sector)) {
             iter->valid = true;
             return true;
@@ -724,8 +726,8 @@ bool zcc_d64_block_iter_init(zcc_d64_block_iter_t *iter,
 
 bool zcc_d64_block_iter_next(zcc_d64_block_iter_t *iter)
 {
-    int next_track = iter->data[0];
-    int next_sector = iter->data[1];
+    int next_track = iter->data[ZCC_D64_BLOCK_TRACK];
+    int next_sector = iter->data[ZCC_D64_BLOCK_SECTOR];
 
     zcc_debug("block iter: current: (%d,%d), next: (%d,%d)",
             iter->track, iter->sector, next_track, next_sector);
@@ -762,9 +764,10 @@ long zcc_d64_file_size(zcc_d64_t *d64, int track, int sector)
 #endif
 
     while (zcc_d64_block_iter_next(&iter)) {
-        size += 254;
+        size += ZCC_D64_BLOCK_SIZE_DATA;
     }
-    return size + iter.data[1] - 1;
+    /* the sector number points to the last data byte */
+    return size + iter.data[ZCC_D64_BLOCK_SECTOR] - 1;
 }
 
 
@@ -806,7 +809,7 @@ bool zcc_d64_dir_read(zcc_d64_dir_t *dir)
     zcc_d64_dirent_iter_t iter;
 
     /* get pointer to BAM */
-    offset = zcc_d64_block_offset(18, 0);
+    offset = zcc_d64_block_offset(ZCC_D64_BAM_TRACK, ZCC_D64_BAM_SECTOR);
     bam = dir->d64->data + offset;
 
     /* get disk name */
