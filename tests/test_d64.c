@@ -94,8 +94,10 @@ static bool test_d64_read(int *total, int *passed)
 
     result = zcc_d64_read(&d64, ARMALYTE, 0);
     if (result) {
-        printf("OK.\n");
-        (*passed)++;
+        if (d64.size == ZCC_D64_SIZE_CBMDOS || d64.size == ZCC_D64_SIZE_EXTENDED) {
+            printf("OK, size = %ld\n", (unsigned long)d64.size);
+            (*passed)++;
+        }
     } else {
         printf("failed:\n");
         zcc_perror(__func__);

@@ -1,11 +1,10 @@
-# vim: set noet ts=8:
+# vim: set noet ts=8 sw=8 sts=8:
 VPATH=src:tests
 
 LD=$(CC)
 
 INSTALL_PREFIX=/usr/local
 
-# -Wformat-signedness not in GCC < 5.0??
 CFLAGS=-Wall -Wextra -pedantic -std=c99 -Wshadow -Wpointer-arith \
 	-Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes \
 	-Wswitch-default -Wswitch-enum -Wuninitialized -Wconversion \

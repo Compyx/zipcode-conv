@@ -1,5 +1,3 @@
-/* vim: set et ts=4 sw=4 sts=4 fdm=marker syntax=c.doxygen : */
-
 /** \file   petasc.c
  * \brief   PETSCII to ASCII conversion and vice versa
  *
